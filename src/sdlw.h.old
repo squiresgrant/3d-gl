@@ -1,0 +1,13 @@
+#include <SDL2/SDL.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include "util.h"
+typedef struct {
+  SDL_Window* w;
+  SDL_Renderer* r;
+} bw;
+#define sdl_clear(r) SDL_SetRenderDrawColor(r,0,0,0,0);\
+    SDL_RenderClear(r);
+bw sdl_init();
+void sdl_loop(bw);
+void sdl_circle(bw w,int x, int y, int r);
