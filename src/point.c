@@ -45,6 +45,7 @@ void mul_matr(double a[][ma],double b[][ma], double res[][ma]){
     }
   }
 }
+
 void perspective_proj(GLFWwindow* b,cord* c, int len,double ctx,double cty,double ctz,double cx, double cy, double cz){
   //double cx = -100;
   //double cy = 0;
@@ -54,7 +55,7 @@ void perspective_proj(GLFWwindow* b,cord* c, int len,double ctx,double cty,doubl
   //double ctz = 0;
   //cz=100-cz;
   glColor3f(1.0f,0.0f,0.0f);
-
+  
   GLfloat* pixels = malloc(sizeof(*pixels)*len*800*500*2);
 
   
@@ -108,7 +109,7 @@ void perspective_proj(GLFWwindow* b,cord* c, int len,double ctx,double cty,doubl
     //glfw_pixel_partial(b,round(bx),round(by)); 
   }
   //return;
-  glPointSize(1.0f);
+  glPointSize(2.0f);
   glEnableClientState(GL_VERTEX_ARRAY);
   glVertexPointer(2,GL_FLOAT,0,pixels);
   glDrawArrays(GL_POINTS,0,len);
@@ -162,6 +163,7 @@ void join_cords(cord* a, cord* b, int a_len, int b_len){
     a[a_len+i] = b[i]; 
   }
 }
+
 int main(){
   double xx[5] = {5.0,5.0,5.0};
   double yy[5] = {5.0,100.0,200.0};
@@ -216,20 +218,56 @@ int main(){
   free(g);
   join_cords(a,h,700,100);
   free(h);
+  int max_r = 630;
+  double half_max_r = (double)max_r/2/2;
   GLFWwindow* w = glfw_init();
-  for(double rr = 0.01;rr<=20;rr+=0.01){
-    double p1 = 0; 
-    double p2 = 0;
-    double p3 = rr;
-    double p4 = -100;
-    double p5 = rr*100*0;
-    double p6 = 0;
+  //glfwSetKeyCallback(w,key_press);
+  double pl_x = 0;
+  double pl_y = 0;
+  double plr_x = 0;
+  double plr_y = 0;
+  for(double rr = 0.01;rr!=0;rr+=0.01){
+    double p1 = plr_x*0.01; 
+    double p2 = plr_y*0.01;
+    double p3 = 0;
+    double p4 = pl_y;
+    double p5 = -pl_y;
+    double p6 = pl_x;
     perspective_proj(w,a,800,p1,p2,p3,p4,p5,p6);
 
     glfw_load(w);
     
     usleep(10000);
-    glfw_clear(w);
+    glfwPollEvents(); 
+    if(glfwGetKey(w,GLFW_KEY_I))
+      plr_x++;
+    if(glfwGetKey(w,GLFW_KEY_K))
+      plr_x--;
+    if(glfwGetKey(w,GLFW_KEY_J))
+      plr_y--;
+    if(glfwGetKey(w,GLFW_KEY_L))
+      plr_y++;
+    plr_x = fmod(plr_x,max_r);
+    plr_y = fmod(plr_y,max_r);
+    if(glfwGetKey(w,GLFW_KEY_W)){
+      pl_x+=cosf(plr_y*0.01);
+      pl_y+=sinf(plr_y*0.01); 
+    }
+    if(glfwGetKey(w,GLFW_KEY_S)){
+      pl_x-=cosf(plr_y*0.01);
+      pl_y-=sinf(plr_y*0.01); 
+    } 
+    if(glfwGetKey(w,GLFW_KEY_A)){
+      pl_x-=cosf((half_max_r+plr_y)*0.01);
+      pl_y-=sinf((half_max_r+plr_y)*0.01); 
+    }
+    if(glfwGetKey(w,GLFW_KEY_D)){
+      pl_x+=cosf((half_max_r+plr_y)*0.01);
+      pl_y+=sinf((half_max_r+plr_y)*0.01); 
+    }
+    //printf("%f %f %f\n",plr_y,cosf(plr_y*0.01),sinf(plr_y*0.01));
+    glfw_clear(w); 
+    
     if(glfwWindowShouldClose(w))break;
   }
   free(a); 
