@@ -67,15 +67,16 @@ void perspective_proj(GLFWwindow* b,cord* c, int len,double ctx,double cty,doubl
   double six = sin(ctx);
   double siy = sin(cty);
   double cox = cos(ctx);
-  double fov = .1;
+  double fov = .01;
   double ex = cx;
   double ey = cy;
   //glfwGetFramebufferSize(b,&w,&h);
   refresh_size(b);
   glColor3f(1.0f,0.0f,0.0f);
-  double ez = 1/tan(fov/2);
+  //double ez = 1/tan(fov/2);
   //glBegin(GL_POINTS);
   GLuint fb = 0;
+  double ez=500; //i dont get this at all
   //glGenFramebuffers(1,&fb);
   
   for(int i = 0; i!=len; i++){
@@ -99,7 +100,7 @@ void perspective_proj(GLFWwindow* b,cord* c, int len,double ctx,double cty,doubl
     //return;
     //printf("%i:%f %f | %f %f\n",i*2,xa,ya,bx,by);
     //return;
-      pixels[i*2] = xa;
+      pixels[i*2] = xa+1;
       pixels[i*2+1] = ya;
     } else {
       pixels[i*2] = -20;
@@ -115,6 +116,12 @@ void perspective_proj(GLFWwindow* b,cord* c, int len,double ctx,double cty,doubl
   glDrawArrays(GL_POINTS,0,len);
   glDisableClientState(GL_VERTEX_ARRAY);
   free(pixels);
+  /*for(int i = 0; i!=get_w();i++){
+    glfw_pixel(b,i,get_h()/2);
+  }
+  for(int i = 0; i!=get_h();i++){
+    glfw_pixel(b,get_w()/2,i);
+  }*/
   //glEnd();
 }
 cord* basier3d(double*xx,double*yy,double*zz,int n){
@@ -187,23 +194,43 @@ int main(){
   
   double xx5[5] = {5.0,100.0,200.0};
   double yy5[5] = {200.0,200.0,200.0};
-  double zz5[5] = {150.0,150.0,150.0};
+  double zz5[5] = {290.0,290.0,290.0};
   cord* e = basier3d(xx5,yy5,zz5,3); 
   
   double xx6[5] = {5.0,100.0,200.0};
   double yy6[5] = {5.0,5.0,5.0};
-  double zz6[5] = {150.0,150.0,150.0};
+  double zz6[5] = {290.0,290.0,290.0};
   cord* f = basier3d(xx6,yy6,zz6,3);
  
   double xx7[5] = {200.0,200.0,200.0};
   double yy7[5] = {5.0,100.0,200.0};
-  double zz7[5] = {150.0,150.0,150.0};
+  double zz7[5] = {290.0,290.0,290.0};
   cord* g = basier3d(xx7,yy7,zz7,3);
   
   double xx8[5] = {5.0,5.0,5.0};
   double yy8[5] = {5.0,100.0,200.0};
-  double zz8[5] = {150.0,150.0,150.0};
+  double zz8[5] = {290.0,290.0,290.0};
   cord* h = basier3d(xx8,yy8,zz8,3);
+  //next
+  double xx9[5] = {5.0,5.0,5.0};
+  double yy9[5] = {200.0,200.0,200.0};
+  double zz9[5] = {290.0,290.0,95.0};
+  cord* ii = basier3d(xx9,yy9,zz9,3);
+ 
+  double xx10[5] = {5.0,5.0,5.0};
+  double yy10[5] = {5.0,5.0,5.0};
+  double zz10[5] = {290.0,290.0,95.0};
+  cord* j = basier3d(xx10,yy10,zz10,3);
+
+  double xx11[5] = {200.0,200.0,200.0};
+  double yy11[5] = {200.0,200.0,200.0};
+  double zz11[5] = {290.0,290.0,95.0};
+  cord* k = basier3d(xx11,yy11,zz11,3);
+  
+  double xx12[5] = {200.0,200.0,200.0};
+  double yy12[5] = {5.0,5.0,5.0};
+  double zz12[5] = {290.0,290.0,95.0};
+  cord* l = basier3d(xx12,yy12,zz12,3);
   join_cords(a,b,100,100);
   free(b);
   join_cords(a,c,200,100);
@@ -218,12 +245,21 @@ int main(){
   free(g);
   join_cords(a,h,700,100);
   free(h);
+  join_cords(a,ii,800,100);
+  free(ii);
+  join_cords(a,j,900,100);
+  free(j);
+  join_cords(a,k,1000,100);
+  free(k);
+  join_cords(a,l,1100,100);
+  free(l);
   int max_r = 630;
   double half_max_r = (double)max_r/2/2;
   GLFWwindow* w = glfw_init();
   //glfwSetKeyCallback(w,key_press);
   double pl_x = 0;
   double pl_y = 0;
+  double pl_z = 0;
   double plr_x = 0;
   double plr_y = 0;
   for(double rr = 0.01;rr!=0;rr+=0.01){
@@ -231,18 +267,18 @@ int main(){
     double p2 = plr_y*0.01;
     double p3 = 0;
     double p4 = pl_y;
-    double p5 = -pl_y;
+    double p5 = -pl_y+pl_z;
     double p6 = pl_x;
-    perspective_proj(w,a,800,p1,p2,p3,p4,p5,p6);
+    perspective_proj(w,a,1200,p1,p2,p3,p4,p5,p6);
 
     glfw_load(w);
     
     usleep(10000);
     glfwPollEvents(); 
     if(glfwGetKey(w,GLFW_KEY_I))
-      plr_x++;
-    if(glfwGetKey(w,GLFW_KEY_K))
       plr_x--;
+    if(glfwGetKey(w,GLFW_KEY_K))
+      plr_x++;
     if(glfwGetKey(w,GLFW_KEY_J))
       plr_y--;
     if(glfwGetKey(w,GLFW_KEY_L))
@@ -252,10 +288,13 @@ int main(){
     if(glfwGetKey(w,GLFW_KEY_W)){
       pl_x+=cosf(plr_y*0.01);
       pl_y+=sinf(plr_y*0.01); 
+      pl_z-=sinf(plr_x*0.01); 
+      printf("%f\n",pl_z);
     }
     if(glfwGetKey(w,GLFW_KEY_S)){
       pl_x-=cosf(plr_y*0.01);
       pl_y-=sinf(plr_y*0.01); 
+      pl_z+=sinf(plr_x*0.01); 
     } 
     if(glfwGetKey(w,GLFW_KEY_A)){
       pl_x-=cosf((half_max_r+plr_y)*0.01);
