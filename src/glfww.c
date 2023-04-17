@@ -6,8 +6,7 @@
 #include <math.h>
 #include "glfww.h"
 int w,h;
-#define ab_to_vp(x,y,w,h,x1,y1) float x = 2 * ((float)x1/w) -1;\
-    float y = 2 * ((float)y1/h) -1;
+
 GLFWwindow* glfw_init(){
   GLFWwindow* window;
 
@@ -44,6 +43,13 @@ GLFWwindow* glfw_init(){
 }
 void refresh_size(GLFWwindow*wi){
   glfwGetFramebufferSize(wi,&w,&h);
+  //printf("%i,%i\n",w,h);
+}
+int get_w(){
+  return w;
+}
+int get_h(){
+  return h;
 }
 #define glfw_load(w) glfwSwapBuffers(w);
 void glfw_loop(GLFWwindow*window){

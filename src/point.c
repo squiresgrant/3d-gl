@@ -53,6 +53,13 @@ void perspective_proj(GLFWwindow* b,cord* c, int len,double ctx,double cty,doubl
   //double cty = 0;
   //double ctz = 0;
   //cz=100-cz;
+  glColor3f(1.0f,0.0f,0.0f);
+
+  GLfloat* pixels = malloc(sizeof(*pixels)*len*800*500*2);
+
+  
+  //glfwSwapBuffers(b);
+  //return;
   double coy = cos(cty);
   double siz = sin(ctz);
   double coz = cos(ctz);
@@ -66,7 +73,10 @@ void perspective_proj(GLFWwindow* b,cord* c, int len,double ctx,double cty,doubl
   refresh_size(b);
   glColor3f(1.0f,0.0f,0.0f);
   double ez = 1/tan(fov/2);
-  glBegin(GL_POINTS);
+  //glBegin(GL_POINTS);
+  GLuint fb = 0;
+  //glGenFramebuffers(1,&fb);
+  
   for(int i = 0; i!=len; i++){
     double ax = c[i].x;
     double ay = c[i].y;
@@ -83,11 +93,28 @@ void perspective_proj(GLFWwindow* b,cord* c, int len,double ctx,double cty,doubl
     double by = ez/dz*dy+dy;
     //printf("%f %f | %f %f %f\n",bx,by,ctx,cty,ctz);
     //int aaa = round((150-dz)/2);
-    if(dz>=0)
-    glfw_circle_partial(b,nearbyint(bx),nearbyint(by),/*(0>=aaa?1:*/1/*)*/); 
+    if(dz>=0){
+      ab_to_vp(xa,ya,get_w(),get_h(),bx,by);
+    //return;
+    //printf("%i:%f %f | %f %f\n",i*2,xa,ya,bx,by);
+    //return;
+      pixels[i*2] = xa;
+      pixels[i*2+1] = ya;
+    } else {
+      pixels[i*2] = -20;
+      pixels[i*2+1]= -20;
+    }
+    //glfw_circle_partial(b,nearbyint(bx),nearbyint(by),/*(0>=aaa?1:*/1/*)*/); 
     //glfw_pixel_partial(b,round(bx),round(by)); 
   }
-  glEnd();
+  //return;
+  glPointSize(1.0f);
+  glEnableClientState(GL_VERTEX_ARRAY);
+  glVertexPointer(2,GL_FLOAT,0,pixels);
+  glDrawArrays(GL_POINTS,0,len);
+  glDisableClientState(GL_VERTEX_ARRAY);
+  free(pixels);
+  //glEnd();
 }
 cord* basier3d(double*xx,double*yy,double*zz,int n){
   cord* pa = malloc(sizeof(*pa)*(3000));
@@ -129,6 +156,7 @@ cord* basier3d(double*xx,double*yy,double*zz,int n){
   return pa;
 }
 void join_cords(cord* a, cord* b, int a_len, int b_len){
+  printf("%lu\n",sizeof(*a)*(a_len+b_len+2));
   a = realloc(a,sizeof(*a)*(a_len+b_len+2));
   for(int i = 0; i<=a_len+b_len; i++){
     a[a_len+i] = b[i]; 
@@ -175,37 +203,36 @@ int main(){
   double zz8[5] = {150.0,150.0,150.0};
   cord* h = basier3d(xx8,yy8,zz8,3);
   join_cords(a,b,100,100);
+  free(b);
   join_cords(a,c,200,100);
+  free(c);
   join_cords(a,d,300,100);
+  free(d);
   join_cords(a,e,400,100);
+  free(e);
   join_cords(a,f,500,100);
+  free(f);
   join_cords(a,g,600,100);
+  free(g);
   join_cords(a,h,700,100);
+  free(h);
   GLFWwindow* w = glfw_init();
   for(double rr = 0.01;rr<=20;rr+=0.01){
     double p1 = 0; 
-    double p2 = rr;
-    double p3 = 0;
+    double p2 = 0;
+    double p3 = rr;
     double p4 = -100;
-    double p5 = 0;
-    double p6 = rr*100*0;
+    double p5 = rr*100*0;
+    double p6 = 0;
     perspective_proj(w,a,800,p1,p2,p3,p4,p5,p6);
-    //perspective_proj(w,b,100,p1,p2,p3,p4,p5,p6);
-    //perspective_proj(w,c,100,p1,p2,p3,p4,p5,p6);
-    //perspective_proj(w,d,100,p1,p2,p3,p4,p5,p6);
-    //perspective_proj(w,e,100,p1,p2,p3,p4,p5,p6);
-    //perspective_proj(w,f,100,p1,p2,p3,p4,p5,p6);
-    //perspective_proj(w,g,100,p1,p2,p3,p4,p5,p6);
-    //perspective_proj(w,h,100,p1,p2,p3,p4,p5,p6);
+
     glfw_load(w);
-    usleep(500);
+    
+    usleep(10000);
     glfw_clear(w);
     if(glfwWindowShouldClose(w))break;
   }
-  free(a);
-  free(b);
-  free(c);
-  free(d);
+  free(a); 
   glfwDestroyWindow(w);
   win_clean();
   return 0;
