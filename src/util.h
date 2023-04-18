@@ -4,6 +4,8 @@
 #ifndef __util__
 #define __util__
 #include "string.h"
+#define greater(a,b) (a>b?a:b)
+#define lesser(a,b) (a>b?b:a)
 void err_m(char*,void (*)(int),char*,int);
 void warn_m(char*,char*,int ,...);
 void info_m(char*,char*,int ,...);
