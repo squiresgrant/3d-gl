@@ -42,8 +42,42 @@ void mul_matr(double a[][ma],double b[][ma], double res[][ma]){
     }
   }
 }
-
-void perspective_proj(GLFWwindow* b,cord* c, int len,double ctx,double cty,double ctz,double cx, double cy, double cz){
+GLuint prog;
+const char* vshader_src = 
+  "#version 400\n"
+  "in vec4 s_vPosition;\n"
+  "void main(){\n"
+  "gl_Position = s_vPosition;\n"
+  "};";
+const char* fshader_src = 
+  "#version 400\n"
+  //"out vec4 s_vColor;\n"
+  "uniform float r;\n"
+  "uniform float g;\n"
+  "uniform float b;\n"
+  "void main(){\n"
+  "gl_FragColor = vec4(r, g, b, 0.0);\n"
+  "};";
+GLuint vshader_comp(const char* shader_src){
+  GLuint vertid = glCreateShader(GL_VERTEX_SHADER);
+  glShaderSource(vertid,1,(const GLchar**)&shader_src, NULL);
+  glCompileShader(vertid);
+  return vertid;
+}
+GLuint fshader_comp(const char* shader_src){
+  GLuint fragid = glCreateShader(GL_FRAGMENT_SHADER);
+  glShaderSource(fragid,1,(const GLchar**)&shader_src, NULL);
+  glCompileShader(fragid);
+  return fragid;
+}
+GLuint build_shader(GLuint vertid, GLuint fragid){
+  GLuint progid = glCreateProgram();
+  glAttachShader(progid,vertid);
+  glAttachShader(progid,fragid);
+  glLinkProgram(progid);
+  return progid;
+}
+void perspective_proj(GLFWwindow* b,point_arr* c,double ctx,double cty,double ctz,double cx, double cy, double cz){
   //double cx = -100;
   //double cy = 0;
   //double cz = 0;
@@ -51,10 +85,13 @@ void perspective_proj(GLFWwindow* b,cord* c, int len,double ctx,double cty,doubl
   //double cty = 0;
   //double ctz = 0;
   //cz=100-cz;
-  glColor3f(1.0f,0.0f,0.0f);
-  GLfloat* pixels = malloc(sizeof(*pixels)*len*2);
+  
+  //glColor3f(1.0f,0.0f,0.0f);
+  GLfloat* pixels = malloc(sizeof(*pixels)*c->len*3);
+  //GLfloat* colors = malloc(sizeof(*colors)*c->len*4);
   if(pixels==NULL)
     err("failed to allocate perspective array:(",pexit);
+  
   
   //glfwSwapBuffers(b);
   //return;
@@ -69,17 +106,19 @@ void perspective_proj(GLFWwindow* b,cord* c, int len,double ctx,double cty,doubl
   double ey = cy;
   //glfwGetFramebufferSize(b,&w,&h);
   refresh_size(b);
-  glColor3f(1.0f,0.0f,0.0f);
+  //glColor3f(1.0f,0.0f,0.0f);
   //double ez = 1/tan(fov/2);
   //glBegin(GL_POINTS);
   GLuint fb = 0;
   double ez=get_h(); //i dont get this at all
   //glGenFramebuffers(1,&fb);
-  
-  for(int i = 0; i!=len; i++){
-    double ax = c[i].x;
-    double ay = c[i].y;
-    double az = c[i].z;
+  glEnableClientState(GL_VERTEX_ARRAY);
+  //glEnableClientState(GL_VERTEX_ARRAY);
+  //glEnableClientState(GL_COLOR_ARRAY);
+  for(int i = 0; i!=c->len; i++){
+    double ax = c->c[i].at.x;
+    double ay = c->c[i].at.y;
+    double az = c->c[i].at.z;
     
     double eyz = (coz*(ay-cy)-siz*ax-cx);
     double yzm = (coy*(az-cz) + siy*(siz*(ay-cy) + coz*(ax-cx)));
@@ -99,20 +138,43 @@ void perspective_proj(GLFWwindow* b,cord* c, int len,double ctx,double cty,doubl
     //return;
       pixels[i*2] = xa+1;
       pixels[i*2+1] = ya;
+      //colors[i*3] = 255.0f;
+      //colors[i*3+1] = 1.0f;
+      //colors[i*3+2] = 1.0f;
     } else {
       pixels[i*2] = -20;
       pixels[i*2+1]= -20;
+      //colors[i*3] = 0.0f;
+      //colors[i*3+1] = 1.0f;
+      //colors[i*3+2] = 0.0f; 
     }
     //glfw_circle_partial(b,nearbyint(bx),nearbyint(by),/*(0>=aaa?1:*/1/*)*/); 
     //glfw_pixel_partial(b,round(bx),round(by)); 
   }
   //return;
   glPointSize(2.0f);
-  glEnableClientState(GL_VERTEX_ARRAY);
+  
+  //glVertexAttribPointer(0,3,GL_FLOAT,0, 7*4,0);
+  //glVertexAttribPointer(3,4,GL_FLOAT,0, 7*4,3*4);
+  //GLint posAttrib = glGetAttribLocation(0,"position");
+  //GLuint vertbuff;
+  //glGenBuffers(1,&vertexBufferObject);
+  //for(int i = 0; i!=c->len*3; i++){
+  //  colors[i] = 1.0f;
+  //} 
+  GLint uni = glGetUniformLocation(prog,"r");
+  glUniform1f(uni,1.0);
+  uni = glGetUniformLocation(prog,"g");
+  glUniform1f(uni,0.2);
+  uni = glGetUniformLocation(prog,"b");
+  glUniform1f(uni,0.3);
   glVertexPointer(2,GL_FLOAT,0,pixels);
-  glDrawArrays(GL_POINTS,0,len);
-  glDisableClientState(GL_VERTEX_ARRAY);
+  //glVertexPointer(3,GL_FLOAT,0,colors);
+  glDrawArrays(GL_POINTS,0,c->len);
+  //glDisableClientState(GL_VERTEX_ARRAY);
+  //glDisableClientState(GL_COLOR_ARRAY);
   free(pixels);
+  //free(colors);
   /*for(int i = 0; i!=get_w();i++){
     glfw_pixel(b,i,get_h()/2);
   }
@@ -121,14 +183,17 @@ void perspective_proj(GLFWwindow* b,cord* c, int len,double ctx,double cty,doubl
   }*/
   //glEnd();
 }
-cord* basier3d(double*xx,double*yy,double*zz,int n){
-  cord* pa = malloc(sizeof(*pa)*(get_w()*30));
-  if(pa==NULL)
+point_arr* basier3d(double*xx,double*yy,double*zz,int n){
+  point_arr* pa;
+  pa = malloc(sizeof(*pa));
+  pa->c = malloc(sizeof(*pa->c)*(get_w()*30));
+  if(pa->c==NULL)
     err("failed to allocate basier array",pexit);
   //double xx[5] = {5.0,5.0,50.0,5.0,5.0};
   //double yy[5] = {5.0,5.0,5.0,5.0,10.0};
   //double zz[5] = {10.0,5.0,5.0,5.0,5.0};
   //int n = 5-1;
+  pa->len = get_w();
   n-=1;
   double aaar = (1.0/get_w());
   for(int iy = 0; iy<=get_w();iy+=1){
@@ -147,9 +212,9 @@ cord* basier3d(double*xx,double*yy,double*zz,int n){
     }
     //int ii = floor(100*(double)(t/1.0));
     //printf("%i\n",iy);
-    pa[iy].x = bcx;
-    pa[iy].y = bcy;
-    pa[iy].z = bcz;
+    pa->c[iy].at.x = bcx;
+    pa->c[iy].at.y = bcy;
+    pa->c[iy].at.z = bcz;
     //printf("(%f,%f,%f)\n",bcx,bcy,bcz);
   }
   //bw b = sdl_init();
@@ -163,71 +228,82 @@ cord* basier3d(double*xx,double*yy,double*zz,int n){
   //sdl_loop(b);
   return pa;
 }
-int join_cords(cord* a, cord* b, int a_len, int b_len){
+void join_cords(point_arr* a, point_arr* b){
   //printf("%lu\n",sizeof(*a)*(a_len+b_len+2));
-  a = realloc(a,sizeof(*a)*(a_len+b_len+2));
-  if(a==NULL)
+  int a_len = a->len;
+  a->c = realloc(a->c,sizeof(*a->c)*(a->len+b->len)*30);
+  a->len+=b->len;
+  if(a->c==NULL)
     err("failed to reallocate cords",pexit);
-  for(int i = 0; i<=a_len+b_len; i++){
-    a[a_len+i] = b[i]; 
+  for(int i = 0; i<=a->len+b->len; i++){
+    a->c[a_len+i].at = b->c[i].at; 
   }
-  return a_len+b_len;
+  //return a.len+b.len;
 }
-cord* square_gen(double* tl, double* tr, double* bl, double*br){
+point_arr* square_gen(double* tl, double* tr, double* bl, double*br){
   double xx[3] = {tl[0],tr[0]};
   double yy[3] = {tl[1],tr[1]};
   double zz[3] = {tl[2],tr[2]};
-  cord* a = basier3d(xx,yy,zz,2);
+  point_arr* a = basier3d(xx,yy,zz,2);
   
   double xx1[3] = {tl[0],bl[0]};
   double yy1[3] = {tl[1],bl[1]};
   double zz1[3] = {tl[2],bl[2]};
-  cord* b = basier3d(xx1,yy1,zz1,2);
+  point_arr* b = basier3d(xx1,yy1,zz1,2);
   
   double xx2[3] = {tr[0],br[0]};
   double yy2[3] = {tr[1],br[1]};
   double zz2[3] = {tr[2],br[2]};
-  cord* c = basier3d(xx2,yy2,zz2,2);
+  point_arr* c = basier3d(xx2,yy2,zz2,2);
   
   double xx3[3] = {bl[0],br[0]};
   double yy3[3] = {bl[1],br[1]};
   double zz3[3] = {bl[2],br[2]};
-  cord* d = basier3d(xx3,yy3,zz3,2);
+  point_arr* d = basier3d(xx3,yy3,zz3,2);
   
-  int ss = join_cords(a,b,get_w(),get_w());
-  ss = join_cords(a,c,ss,get_w());
-  ss = join_cords(a,d,ss,get_w());
-  free(b);
-  free(c);
-  free(d);
+  join_cords(a,b);
+  join_cords(a,c);
+  join_cords(a,d);
+  free(b->c);
+  free(c->c);
+  free(d->c);
   return a;
 }
-cord* cube_gen(double* tl, double* tr, double* bl, double*br,
+point_arr* cube_gen(double* tl, double* tr, double* bl, double*br,
                double* tl2, double* tr2, double* bl2, double*br2){
-  
-  double n_len = get_w()*4;
-  cord*a = square_gen(tl,tr,bl,br); 
-  cord*b = square_gen(tl2,tr2,bl2,br2); 
+   
+  point_arr* a = square_gen(tl,tr,bl,br); 
+  point_arr* b = square_gen(tl2,tr2,bl2,br2); 
   double s;
-  s = join_cords(a,b,n_len,n_len);
-  free(b);
-  cord*c = square_gen(tl2,tr2,tl,tr);
-  s = join_cords(a,c,s,n_len);
-  free(c);
-  cord*d = square_gen(bl2,br2,bl,br);
-  s = join_cords(a,d,s,n_len);
-  free(d); 
-  cord*e = square_gen(tl,tl2,bl,bl2);
-  s = join_cords(a,e,s,n_len);
-  free(e); 
-  cord*f = square_gen(br2,br,tr2,tr);
-  s = join_cords(a,f,s,n_len);
-  free(f); 
+  join_cords(a,b);
+  free(b->c);
+  point_arr* c = square_gen(tl2,tr2,tl,tr);
+  join_cords(a,c);
+  free(c->c);
+  point_arr* d = square_gen(bl2,br2,bl,br);
+  join_cords(a,d);
+  free(d->c); 
+  point_arr* e = square_gen(tl,tl2,bl,bl2);
+  join_cords(a,e);
+  free(e->c); 
+  point_arr* f = square_gen(br2,br,tr2,tr);
+  join_cords(a,f);
+  free(f->c); 
   return a;
 }
+
 int main(){
   GLFWwindow* w = glfw_init();
   refresh_size(w);
+  GLenum err = glewInit();
+  if (err != GLEW_OK)
+    exit(1); // or handle the error in a nicer way
+  if (!GLEW_VERSION_2_1)  // check that the machine supports the 2.1 API.
+    exit(1); // or handle the error in a nicer way
+  GLuint vid = vshader_comp(vshader_src);
+  GLuint fid = fshader_comp(fshader_src);
+  prog = build_shader(vid,fid);
+  glUseProgram(prog); 
   double tl2[3] = {5.0,200.0,400.0};
   double tr2[3] = {200.0,200.0,400.0};
   double bl2[3] = {5.0,5.0,200.0};
@@ -237,13 +313,11 @@ int main(){
   double tr1[3] = {200.0,200.0,200.0};
   double bl1[3] = {5.0,5.0,5.0};
   double br1[3] = {200.0,5.0,5.0};
-  cord*a = cube_gen(tl1,tr1,bl1,br1,tl2,tr2,bl2,br2);
-  double s = get_w()*24;
-  
-  
+  point_arr* a = cube_gen(tl1,tr1,bl1,br1,tl2,tr2,bl2,br2); 
+  //exit(0);
   int max_r = 630;
   double half_max_r = (double)max_r/2/2;
-  
+  //printf("%s\n",glGetString(GL_VERSION));
   //glfwSetKeyCallback(w,key_press);
   double pl_x = 0;
   double pl_y = 0;
@@ -258,7 +332,7 @@ int main(){
     double p5 = -pl_y+pl_z;
     double p6 = pl_x;
     
-    perspective_proj(w,a,s,p1,p2,p3,p4,p5,p6);
+    perspective_proj(w,a,p1,p2,p3,p4,p5,p6);
 
     glfw_load(w);
     int mod_move=1;
@@ -327,7 +401,7 @@ int main(){
     
     if(glfwWindowShouldClose(w))break;
   }
-  free(a); 
+  free(a->c); 
   glfwDestroyWindow(w);
   win_clean();
   return 0;

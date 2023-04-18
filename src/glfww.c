@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <GLFW/glfw3.h>
 #include "util.h"
 #include <unistd.h>
 #include <stdlib.h>
@@ -18,7 +17,10 @@ GLFWwindow* glfw_init(){
     glfwTerminate();
     err("failed to create window",pexit);
   }
-
+  glEnableClientState(GL_VERTEX_ARRAY);
+  //glEnableClientState(GL_COLOR_ARRAY);
+  //glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+  //glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
   glfwMakeContextCurrent(window);
   int w,h;
   glfwGetFramebufferSize(window,&w,&h);
