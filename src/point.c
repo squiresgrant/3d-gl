@@ -265,8 +265,11 @@ point_arr* square_gen(double* tl, double* tr, double* bl, double*br){
   join_cords(a,c);
   join_cords(a,d);
   free(b->c);
+  free(b);
   free(c->c);
+  free(c);
   free(d->c);
+  free(d);
   return a;
 }
 point_arr* cube_gen(double* tl, double* tr, double* bl, double*br,
@@ -277,22 +280,29 @@ point_arr* cube_gen(double* tl, double* tr, double* bl, double*br,
   double s;
   join_cords(a,b);
   free(b->c);
+  free(b);
   point_arr* c = square_gen(tl2,tr2,tl,tr);
   join_cords(a,c);
   free(c->c);
+  free(c);
   point_arr* d = square_gen(bl2,br2,bl,br);
   join_cords(a,d);
-  free(d->c); 
+  free(d->c);
+  free(d);
   point_arr* e = square_gen(tl,tl2,bl,bl2);
   join_cords(a,e);
-  free(e->c); 
+  free(e->c);
+  free(e);
   point_arr* f = square_gen(br2,br,tr2,tr);
   join_cords(a,f);
-  free(f->c); 
+  free(f->c);
+  free(f);
   return a;
 }
 
-int main(){
+int main(int argc,char*argv[]){
+  flag_handle(argc,argv);
+  atexit(sig_handle);
   GLFWwindow* w = glfw_init();
   refresh_size(w);
   GLenum err = glewInit();
@@ -304,6 +314,7 @@ int main(){
   GLuint fid = fshader_comp(fshader_src);
   prog = build_shader(vid,fid);
   glUseProgram(prog); 
+  info("built shaders");
   double tl2[3] = {5.0,200.0,400.0};
   double tr2[3] = {200.0,200.0,400.0};
   double bl2[3] = {5.0,5.0,200.0};
@@ -401,8 +412,13 @@ int main(){
     
     if(glfwWindowShouldClose(w))break;
   }
-  free(a->c); 
+  free(a->c);
+  free(a);
   glfwDestroyWindow(w);
   win_clean();
+  glDeleteShader(vid);
+  glDeleteShader(fid);
+  glDeleteShader(prog);
+  info("killed window:p");
   return 0;
 }

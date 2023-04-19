@@ -25,6 +25,7 @@ GLFWwindow* glfw_init(){
   int w,h;
   glfwGetFramebufferSize(window,&w,&h);
   glViewport(0,0,w,h);
+  info("yay:D i made a window uwu");
   return window;
   /*
   while(!glfwWindowShouldClose(window)){

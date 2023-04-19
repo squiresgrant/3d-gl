@@ -2,6 +2,15 @@
 #include <stdlib.h>
 #include "util.h"
 #include "strings.h"
+double allocs = 0;
+//#define malloc(X) mmalloc(X);
+void mmalloc(){
+  allocs++; 
+}
+//#define free(X) ffree(X);
+void ffree(){
+  allocs--;
+}
 int log_level = 0;
 int __signal = 0;
 void pexit(int s){
@@ -9,6 +18,10 @@ void pexit(int s){
   exit(s);
 }
 void sig_handle(void){
+  if(allocs>0)
+    warn("uneven allocations, memory leak(s)");
+  if(allocs==0)
+    info("even allocations, no internal leaks");
   if(__signal==0){
     printf("\x1b[90mexited with \x1b[32m\x1b[1msignal [ %i ] \x1b[0m\x1b[90mgraceful exit\x1b[0m\n",__signal); 
   } else if(__signal>0){

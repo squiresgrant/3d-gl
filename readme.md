@@ -1,5 +1,5 @@
 
-optimized build : `clang ./src/*.c -lm -lglfw -lGL -fno-trapping-math`
+optimized build : `clang ./src/*.c -lm -lglfw -lGL -lGLEW -fno-trapping-math`
 
 #known issues
-- glfw causes memory leak (not lost, related to video drivers)
+- glfw & glew causes memory leak (not lost, related to video drivers)
