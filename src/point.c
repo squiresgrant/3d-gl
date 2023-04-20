@@ -9,9 +9,9 @@ typedef struct {
   double z;
 } cord;
 typedef struct {
-  int r;
-  int g;
-  int b;
+  float r;
+  float g;
+  float b;
 } color;
 typedef struct {
   cord at;
@@ -144,9 +144,9 @@ void perspective_proj(GLFWwindow* b,point_arr* c,double ctx,double cty,double ct
     //return;
       pixels[i*2] = xa+1;
       pixels[i*2+1] = ya;
-      colors[i*3] = 0.0f;
-      colors[i*3+1] = 1.0f;
-      colors[i*3+2] = 1.0f;
+      colors[i*3] = c->c[i].color.r;
+      colors[i*3+1] = c->c[i].color.g;
+      colors[i*3+2] = c->c[i].color.b;
     } else {
       pixels[i*2] = -20;
       pixels[i*2+1]= -20;
@@ -230,7 +230,7 @@ void perspective_proj(GLFWwindow* b,point_arr* c,double ctx,double cty,double ct
   }*/
   //glEnd();
 }
-point_arr* basier3d(double*xx,double*yy,double*zz,int n){
+point_arr* basier3d(double*xx,double*yy,double*zz,int n,float rr, float gg, float bb){
   point_arr* pa;
   pa = malloc(sizeof(*pa));
   pa->c = malloc(sizeof(*pa->c)*(get_w()*60));
@@ -262,6 +262,9 @@ point_arr* basier3d(double*xx,double*yy,double*zz,int n){
     pa->c[iy].at.x = bcx;
     pa->c[iy].at.y = bcy;
     pa->c[iy].at.z = bcz;
+    pa->c[iy].color.r = rr;
+    pa->c[iy].color.g = gg;
+    pa->c[iy].color.b = bb;
     //printf("(%f,%f,%f)\n",bcx,bcy,bcz);
   }
   //bw b = sdl_init();
@@ -284,29 +287,30 @@ void join_cords(point_arr* a, point_arr* b){
     err("failed to reallocate cords",pexit);
   for(int i = 0; i<=a->len+b->len; i++){
     a->c[a_len+i].at = b->c[i].at; 
+    a->c[a_len+i].color = b->c[i].color; 
   }
   //return a.len+b.len;
 }
-point_arr* square_gen(double* tl, double* tr, double* bl, double*br){
+point_arr* square_gen(double* tl, double* tr, double* bl, double*br,float rr, float gg, float bb){
   double xx[3] = {tl[0],tr[0]};
   double yy[3] = {tl[1],tr[1]};
   double zz[3] = {tl[2],tr[2]};
-  point_arr* a = basier3d(xx,yy,zz,2);
+  point_arr* a = basier3d(xx,yy,zz,2,rr,gg,bb);
   
   double xx1[3] = {tl[0],bl[0]};
   double yy1[3] = {tl[1],bl[1]};
   double zz1[3] = {tl[2],bl[2]};
-  point_arr* b = basier3d(xx1,yy1,zz1,2);
+  point_arr* b = basier3d(xx1,yy1,zz1,2,rr,gg,bb);
   
   double xx2[3] = {tr[0],br[0]};
   double yy2[3] = {tr[1],br[1]};
   double zz2[3] = {tr[2],br[2]};
-  point_arr* c = basier3d(xx2,yy2,zz2,2);
+  point_arr* c = basier3d(xx2,yy2,zz2,2,rr,gg,bb);
   
   double xx3[3] = {bl[0],br[0]};
   double yy3[3] = {bl[1],br[1]};
   double zz3[3] = {bl[2],br[2]};
-  point_arr* d = basier3d(xx3,yy3,zz3,2);
+  point_arr* d = basier3d(xx3,yy3,zz3,2,rr,gg,bb);
   
   join_cords(a,b);
   join_cords(a,c);
@@ -320,27 +324,29 @@ point_arr* square_gen(double* tl, double* tr, double* bl, double*br){
   return a;
 }
 point_arr* cube_gen(double* tl, double* tr, double* bl, double*br,
-               double* tl2, double* tr2, double* bl2, double*br2){
+               double* tl2, double* tr2, double* bl2, double*br2,
+                    float rr, float gg, float bb){
    
-  point_arr* a = square_gen(tl,tr,bl,br); 
-  point_arr* b = square_gen(tl2,tr2,bl2,br2); 
+  point_arr* a = square_gen(tl,tr,bl,br,rr,gg,bb); 
+  
+  point_arr* b = square_gen(tl2,tr2,bl2,br2,rr,gg,bb); 
   double s;
   join_cords(a,b);
   free(b->c);
   free(b);
-  point_arr* c = square_gen(tl2,tr2,tl,tr);
+  point_arr* c = square_gen(tl2,tr2,tl,tr,rr,gg,bb);
   join_cords(a,c);
   free(c->c);
   free(c);
-  point_arr* d = square_gen(bl2,br2,bl,br);
+  point_arr* d = square_gen(bl2,br2,bl,br,rr,gg,bb);
   join_cords(a,d);
   free(d->c);
   free(d);
-  point_arr* e = square_gen(tl,tl2,bl,bl2);
+  point_arr* e = square_gen(tl,tl2,bl,bl2,rr,gg,bb);
   join_cords(a,e);
   free(e->c);
   free(e);
-  point_arr* f = square_gen(br2,br,tr2,tr);
+  point_arr* f = square_gen(br2,br,tr2,tr,rr,gg,bb);
   join_cords(a,f);
   free(f->c);
   free(f);
@@ -374,7 +380,7 @@ int main(int argc,char*argv[]){
   double tr1[3] = {200.0,200.0,200.0};
   double bl1[3] = {5.0,5.0,5.0};
   double br1[3] = {200.0,5.0,5.0};
-  point_arr* a = cube_gen(tl1,tr1,bl1,br1,tl2,tr2,bl2,br2); 
+  point_arr* a = cube_gen(tl1,tr1,bl1,br1,tl2,tr2,bl2,br2,0.1f,0.1f,0.1f); 
   //exit(0);
   int max_r = 630;
   double half_max_r = (double)max_r/2/2;
