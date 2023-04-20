@@ -44,19 +44,22 @@ void mul_matr(double a[][ma],double b[][ma], double res[][ma]){
 }
 GLuint prog;
 const char* vshader_src = 
-  "#version 400\n"
-  "in vec4 s_vPosition;\n"
+  "#version 330\n"
+  "layout (location = 0) in vec3 pos;\n"
+  "layout (location = 1) in vec3 color;\n"
+  //"in vec4 s_vPosition;\n"
+  //"in vec5 aPos;\n"
+  "out vec3 ncolor;\n"
   "void main(){\n"
-  "gl_Position = s_vPosition;\n"
+  "ncolor = color;\n"
+  "gl_Position = vec4(pos,1.0);\n" 
   "};";
 const char* fshader_src = 
-  "#version 400\n"
-  //"out vec4 s_vColor;\n"
-  "uniform float r;\n"
-  "uniform float g;\n"
-  "uniform float b;\n"
+  "#version 330\n"
+  "in vec3 ncolor;\n"
+  "out vec3 color;\n"
   "void main(){\n"
-  "gl_FragColor = vec4(r, g, b, 0.0);\n"
+  "gl_FragColor = vec4(ncolor,1.0);\n"
   "};";
 GLuint vshader_comp(const char* shader_src){
   GLuint vertid = glCreateShader(GL_VERTEX_SHADER);
@@ -85,12 +88,15 @@ void perspective_proj(GLFWwindow* b,point_arr* c,double ctx,double cty,double ct
   //double cty = 0;
   //double ctz = 0;
   //cz=100-cz;
-  
+  //printf("%i\n",glGetError());
   //glColor3f(1.0f,0.0f,0.0f);
-  GLfloat* pixels = malloc(sizeof(*pixels)*c->len*3);
+  //GLfloat* pixels = malloc(sizeof(*pixels)*c->len*5);
+  GLfloat pixels[(int)ceil(c->len*15)];
+  GLfloat colors[(int)ceil(c->len*15)];
+
   //GLfloat* colors = malloc(sizeof(*colors)*c->len*4);
-  if(pixels==NULL)
-    err("failed to allocate perspective array:(",pexit);
+  //if(pixels==NULL)
+  //  err("failed to allocate perspective array:(",pexit);
   
   
   //glfwSwapBuffers(b);
@@ -110,7 +116,7 @@ void perspective_proj(GLFWwindow* b,point_arr* c,double ctx,double cty,double ct
   //double ez = 1/tan(fov/2);
   //glBegin(GL_POINTS);
   GLuint fb = 0;
-  double ez=get_h(); //i dont get this at all
+  double ez=get_h()*2; //i dont get this at all
   //glGenFramebuffers(1,&fb);
   glEnableClientState(GL_VERTEX_ARRAY);
   //glEnableClientState(GL_VERTEX_ARRAY);
@@ -138,22 +144,22 @@ void perspective_proj(GLFWwindow* b,point_arr* c,double ctx,double cty,double ct
     //return;
       pixels[i*2] = xa+1;
       pixels[i*2+1] = ya;
-      //colors[i*3] = 255.0f;
-      //colors[i*3+1] = 1.0f;
-      //colors[i*3+2] = 1.0f;
+      colors[i*3] = 0.0f;
+      colors[i*3+1] = 1.0f;
+      colors[i*3+2] = 1.0f;
     } else {
       pixels[i*2] = -20;
       pixels[i*2+1]= -20;
-      //colors[i*3] = 0.0f;
-      //colors[i*3+1] = 1.0f;
-      //colors[i*3+2] = 0.0f; 
+      colors[i*3] = 0.0f;
+      colors[i*3+1] = 1.0f;
+      colors[i*3+2] = 0.0f; 
     }
     //glfw_circle_partial(b,nearbyint(bx),nearbyint(by),/*(0>=aaa?1:*/1/*)*/); 
     //glfw_pixel_partial(b,round(bx),round(by)); 
   }
   //return;
   glPointSize(2.0f);
-  
+  //glUseProgram(prog);
   //glVertexAttribPointer(0,3,GL_FLOAT,0, 7*4,0);
   //glVertexAttribPointer(3,4,GL_FLOAT,0, 7*4,3*4);
   //GLint posAttrib = glGetAttribLocation(0,"position");
@@ -162,18 +168,59 @@ void perspective_proj(GLFWwindow* b,point_arr* c,double ctx,double cty,double ct
   //for(int i = 0; i!=c->len*3; i++){
   //  colors[i] = 1.0f;
   //} 
-  GLint uni = glGetUniformLocation(prog,"r");
+  /*GLint uni = glGetUniformLocation(prog,"r");
   glUniform1f(uni,1.0);
   uni = glGetUniformLocation(prog,"g");
   glUniform1f(uni,0.2);
   uni = glGetUniformLocation(prog,"b");
-  glUniform1f(uni,0.3);
-  glVertexPointer(2,GL_FLOAT,0,pixels);
-  //glVertexPointer(3,GL_FLOAT,0,colors);
+  glUniform1f(uni,0.3);*/
+  /*glVertexAttribPointer(0,2,GL_FLOAT,GL_FALSE, c->len/2*sizeof(float),(void*)0);
+  glEnableVertexAttribArray(0);
+  int aaa3 = c->len/2*sizeof(float);
+  glVertexAttribPointer(2,5,GL_FLOAT,GL_FALSE, c->len/2*sizeof(float),(void*)(&aaa3));
+  glEnableVertexAttribArray(1);*/
+ /* GLuint colorb;
+  glGenBuffers(1,&colorb);
+  glBindBuffer(GL_ARRAY_BUFFER,colorb);
+  glBufferData(GL_ARRAY_BUFFER,sizeof(colors),colors,GL_STATIC_DRAW);
+  glEnableVertexAttribArray(1);
+  glBindBuffer(GL_ARRAY_BUFFER,colorb);
+  glVertexAttribPointer(1,3,GL_FLOAT,GL_FALSE,0,(void*)0);
+*/// return; 
+  
+
+  GLuint verta;
+  glGenVertexArrays(1,&verta);
+  glBindVertexArray(verta);GLuint vetb;
+  glGenBuffers(1,&vetb);
+  
+  glBindBuffer(GL_ARRAY_BUFFER,vetb);
+  glBufferData(GL_ARRAY_BUFFER,sizeof(pixels),pixels,GL_STATIC_DRAW);
+
+  glEnableVertexAttribArray(0);
+  glBindBuffer(GL_ARRAY_BUFFER,vetb);
+  glVertexAttribPointer(0,2,GL_FLOAT,GL_FALSE,0,(void*)0);
+  
+  GLuint colb;
+  glGenBuffers(1,&colb);
+  glBindBuffer(GL_ARRAY_BUFFER,colb);
+  glBufferData(GL_ARRAY_BUFFER,sizeof(colors),colors,GL_STATIC_DRAW);
+
+  glEnableVertexAttribArray(1);
+  glBindBuffer(GL_ARRAY_BUFFER,colb);
+  glVertexAttribPointer(1,3,GL_FLOAT,GL_FALSE,0,(void*)0);
+
   glDrawArrays(GL_POINTS,0,c->len);
+  glDeleteBuffers(1,&vetb);
+  glDeleteBuffers(1,&colb);
+  //glDisableVertexAttribArray(0);
+  //glDisableVertexAttribArray(1);
+  //glVertexPointer(2,GL_FLOAT,0,pixels);
+  //glVertexPointer(3,GL_FLOAT,0,colors);
+  //glDrawArrays(GL_POINTS,0,c->len);
   //glDisableClientState(GL_VERTEX_ARRAY);
   //glDisableClientState(GL_COLOR_ARRAY);
-  free(pixels);
+  //free(pixels);
   //free(colors);
   /*for(int i = 0; i!=get_w();i++){
     glfw_pixel(b,i,get_h()/2);
@@ -186,7 +233,7 @@ void perspective_proj(GLFWwindow* b,point_arr* c,double ctx,double cty,double ct
 point_arr* basier3d(double*xx,double*yy,double*zz,int n){
   point_arr* pa;
   pa = malloc(sizeof(*pa));
-  pa->c = malloc(sizeof(*pa->c)*(get_w()*30));
+  pa->c = malloc(sizeof(*pa->c)*(get_w()*60));
   if(pa->c==NULL)
     err("failed to allocate basier array",pexit);
   //double xx[5] = {5.0,5.0,50.0,5.0,5.0};
@@ -231,7 +278,7 @@ point_arr* basier3d(double*xx,double*yy,double*zz,int n){
 void join_cords(point_arr* a, point_arr* b){
   //printf("%lu\n",sizeof(*a)*(a_len+b_len+2));
   int a_len = a->len;
-  a->c = realloc(a->c,sizeof(*a->c)*(a->len+b->len)*30);
+  a->c = realloc(a->c,sizeof(*a->c)*(a->len+b->len)*60);
   a->len+=b->len;
   if(a->c==NULL)
     err("failed to reallocate cords",pexit);
@@ -315,6 +362,9 @@ int main(int argc,char*argv[]){
   prog = build_shader(vid,fid);
   glUseProgram(prog); 
   info("built shaders");
+  
+  
+  
   double tl2[3] = {5.0,200.0,400.0};
   double tr2[3] = {200.0,200.0,400.0};
   double bl2[3] = {5.0,5.0,200.0};
@@ -335,7 +385,7 @@ int main(int argc,char*argv[]){
   double pl_z = 0;
   double plr_x = 0;
   double plr_y = 0;
-  for(double rr = 0.01;rr!=0;rr+=0.01){
+  for(;;){
     double p1 = plr_x*0.01; 
     double p2 = plr_y*0.01;
     double p3 = 0;
@@ -344,38 +394,46 @@ int main(int argc,char*argv[]){
     double p6 = pl_x;
     
     perspective_proj(w,a,p1,p2,p3,p4,p5,p6);
-
+    
     glfw_load(w);
+    //break;
     int mod_move=1;
     double run_mul=2;
-    usleep(10000);
+    //usleep(10000);
     glfwPollEvents(); 
     if(glfwGetKey(w,GLFW_KEY_I)){
       if(glfwGetKey(w,GLFW_KEY_LEFT_SHIFT))
         plr_x-=mod_move;
       else 
         plr_x--;
+    plr_x = fmod(plr_x,max_r);
+    //plr_y = fmod(plr_y,max_r);
     }
     if(glfwGetKey(w,GLFW_KEY_K)){
       if(glfwGetKey(w,GLFW_KEY_LEFT_SHIFT))
         plr_x+=mod_move;
       else 
         plr_x++;
+    plr_x = fmod(plr_x,max_r);
+    //plr_y = fmod(plr_y,max_r);
     } 
     if(glfwGetKey(w,GLFW_KEY_J)){
       if(glfwGetKey(w,GLFW_KEY_LEFT_SHIFT))
         plr_y-=mod_move;
       else 
         plr_y--;
+    //plr_x = fmod(plr_x,max_r);
+    plr_y = fmod(plr_y,max_r);
     } 
     if(glfwGetKey(w,GLFW_KEY_L)){
       if(glfwGetKey(w,GLFW_KEY_LEFT_SHIFT))
         plr_y+=mod_move;
       else 
         plr_y++;
-    }
-    plr_x = fmod(plr_x,max_r);
+    //plr_x = fmod(plr_x,max_r);
     plr_y = fmod(plr_y,max_r);
+    }
+    
     if(glfwGetKey(w,GLFW_KEY_W)){
       double mul = 1;
       if(glfwGetKey(w,GLFW_KEY_LEFT_SHIFT))
@@ -408,6 +466,7 @@ int main(int argc,char*argv[]){
       pl_y+=sinf((half_max_r+plr_y)*0.01)*mul; 
     }
     //printf("%f %f %f\n",plr_y,cosf(plr_y*0.01),sinf(plr_y*0.01));
+    usleep(1000*1000/60);
     glfw_clear(w); 
     
     if(glfwWindowShouldClose(w))break;
