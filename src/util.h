@@ -6,9 +6,10 @@
 #include "string.h"
 #define greater(a,b) (a>b?a:b)
 #define lesser(a,b) (a>b?b:a)
-//#define malloc(X) malloc(X); mmalloc();
+#define diff(a,b) (a>b?a-b:b-a)
+#define malloc(X) malloc(X); mmalloc();
 void mmalloc();
-//#define free(X) free(X); ffree();
+#define free(X) free(X); ffree();
 void ffree();
 void err_m(char*,void (*)(int),char*,int);
 void warn_m(char*,char*,int ,...);

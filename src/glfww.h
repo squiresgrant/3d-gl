@@ -12,6 +12,7 @@
 #define win_clean() glfwTerminate();
 #define ab_to_vp(x,y,w,h,x1,y1) float x = 2 * ((float)x1/(w)) -1;\
     float y = 2 * ((float)y1/(h)) -1;
+#define vp_to_ab(w,x1) ((float)x1 +1.0/2)*w
 GLFWwindow* glfw_init();
 #define glfw_load(w) glfwSwapBuffers(w);
 void glfw_loop(GLFWwindow*window);
