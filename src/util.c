@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "util.h"
+#include <math.h>
 #include "strings.h"
 double allocs = 0;
 //#define malloc(X) mmalloc(X);
@@ -18,12 +19,15 @@ void pexit(int s){
   exit(s);
 }
 void sig_handle(void){
-  if(allocs>0)
-    warn("uneven allocations, memory leak(s)");
+  if(allocs>0){
+    char ssa[45];
+    sprintf(ssa,"%s | (found %i)","uneven allocations, memory leak(s)",(int)nearbyint(allocs));
+    warn(ssa);
+  }
   if(allocs==0)
     info("even allocations, no internal leaks");
   if(__signal==0){
-    printf("\x1b[90mexited with \x1b[32m\x1b[1msignal [ %i ] \x1b[0m\x1b[90mgraceful exit\x1b[0m\n",__signal); 
+    printf("\x1b[90mexited with \x1b[32m\x1b[1msignal [ %i ] \x1b[0m\x1b[90mgraceful exit\x1b[0m (meow)\n",__signal); 
   } else if(__signal>0){
     printf("\x1b[90mexited with \x1b[31m\x1b[1msignal [ %i ] \x1b[0m\x1b[90mgraceful exit\x1b[0m\n",__signal);
     //extra cleanup if needed
