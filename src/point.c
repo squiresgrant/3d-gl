@@ -26,7 +26,7 @@ typedef struct {
   double vlen;
   double len;
 } point_arr;
-double binominal(int n, int k){
+double binomial(int n, int k){
   if(n==k)
     return 1.0;
   double v = 1.0; 
@@ -107,11 +107,11 @@ point_arr* basier2d(double*xx,double*yy,int n,float rr, float gg, float bb){
     double bcx = 0;
     double bcy = 0;
     for(int i = 0; i <=n;i++){
-      double pp = binominal(n,i) * pow((1 - t),(n - i)) * pow(t,i);
+      double pp = binomial(n,i) * pow((1 - t),(n - i)) * pow(t,i);
       bcx +=  pp * xx[i];
       bcy +=  pp * yy[i];
       //if(ii==3){
-      //  printf("pp: %f bi : %f p1 : %f p2 : %f| %f, %f, %f\n",pp,binominal(n,i),bcx,bcy,bcz,pow((1-t),(n-i)),pow(t,i));
+      //  printf("pp: %f bi : %f p1 : %f p2 : %f| %f, %f, %f\n",pp,binomial(n,i),bcx,bcy,bcz,pow((1-t),(n-i)),pow(t,i));
       //}
     }
     //int ii = floor(100*(double)(t/1.0));
@@ -230,7 +230,7 @@ void perspective_proj(GLFWwindow* b,point_arr* c,double ctx,double cty,double ct
     //glfw_pixel_partial(b,round(bx),round(by)); 
   }
   //int c_len = c->len;
-  //connect all verticies
+  //connect all vertcies
   double fc_len = c_len;
   for(int i = 0; i<=fc_len-1; i++){
     double x22[2] = {pixels[i*2],pixels[(i+1)*2]};
@@ -407,7 +407,8 @@ void perspective_proj(GLFWwindow* b,point_arr* c,double ctx,double cty,double ct
   for(int ii = 0; ii!=trline->len;ii++){
     printf("%f %i\n",trline->at[ii].at[3],trline->at[ii].len);   
   }*/
-  //printf("---\n");
+  double ffclen = c_len;
+
   double lmax_t = -2.0;
   double lmin_t = 2.0;
   double lmax2_t = -2.0;
@@ -457,21 +458,55 @@ void perspective_proj(GLFWwindow* b,point_arr* c,double ctx,double cty,double ct
     double bb[] = {ux1,ux2};
     double bb2[] = {uy1, uy2};
     point_arr* asd = basier2d(bb,bb2,2,0.1,0.1,0.1);
-    for(int lli = 0; lli!=asd->len; lli++){
+    //y - y1 = m(x - x1)
+    //double a1x = (uy2 - uy1);
+    //double b1y = (ux2 - ux1);
+    //double a1c = (ux2*a1x + uy2*b1y);
+    //printf("%fx+%fy=%f\n",a1x,b1y,a1c);
+    double ex = 0.0;
+    double ey = 0.0;
+    double dtex = -1.0;
+    for(int yyu = 0; yyu!=fc_len-1; yyu++){ 
+      double x1 = ux1;
+      double x2 = ux2;
+      double y1 = uy1;
+      double y2 = uy2;
+      double m1 = (y2-y1)/(x2-x1);
+      
+      double x3 = pixels[yyu*2];
+      double x4 = pixels[(yyu+1)*2];
+      double y3 = pixels[yyu*2+1];
+      double y4 = pixels[(yyu+1)*2+1];
+      double m2 = (y4-y3)/(x4-x3);
+      
+      double b1 = y1 - m1 * x1;
+      double b2 = y3 - m2 * x3;
+
+      double nsx = (b2-b1)/(m1-m2);
+      double nsy = m1*nsx+b1;
+     
+      if(!(nsx >= greater(lesser(x1, x2), lesser(x3, x4)) && nsx <= lesser(greater(x1, x2), greater(x3, x4)))
+          ||(nsx<x1||nsx>x2||nsy<y1||nsy>y2))
+          continue;
+
+      pixels = realloc(pixels,sizeof *pixels *((c_len+1)*4));
+      colors = realloc(colors,sizeof *colors *((c_len+1)*5));  
+      pixels[c_len*2] = nsx;
+      pixels[c_len*2+1] = nsy; 
+      colors[c_len*3] = 1.0f;//yyu/(fc_len-1);
+      colors[c_len*3+1] = 0.5f;//vvi==3?0.1f:vvi==4?0.5f:1.0f; 
+      colors[c_len*3+2] = 1.0f;//-yyu/(fc_len-1); 
+      c_len++;
+      //printf("%f,%f,%f,%f,%f,%f %f,%f,%f,%f,%f,%f,  %f %f\n",x1,y1,x2,y2,m1,b1, x3,y3,x4,y4,m2,b2,nsx,nsy);
+      //printf("(%f,%f) -> (%f,%f) :: x:%f,y:%f\n",ux1,uy1,ux2,uy2,nsx,nsy); 
+    }
+    
+    
+    for(int lli = 0; lli!=asd->len&&0; lli++){
     pixels = realloc(pixels,sizeof *pixels *((c_len+1)*4));
     colors = realloc(colors,sizeof *colors *((c_len+1)*5)); 
-    //ab_to_vp(nn1,nn2,get_w(),get_h(),abba->c[hhi].at.x,abba->c[hhi].at.y)
-        //printf("%f->%f %f->%f\n",abba->c[hhi].at.x,nn1,abba->c[hhi].at.y,nn2);
-    int brr = 0;
-    for(int yyu = 0; yyu!=c->len; yyu++){
-      if(!(pixels[yyu*2]==ux2&&pixels[yyu*2+1]==uy2)&&!(pixels[yyu*2]==ux1&&pixels[yyu*2+1]==uy1)&&
-        diff(pixels[yyu*2],asd->c[lli].at.x)<1.0f/get_w()&&
-            diff(pixels[yyu*2+1],asd->c[lli].at.y)<1.0f/get_h()){
-        brr=1;
-        break;
-      }
-    }
-    if(brr)
+    double dd = 10;
+    if(diff(asd->c[lli].at.x,ex)<(float)dd/get_w()&&diff(asd->c[lli].at.y,ey)<(float)dd/get_w())
       break;
     pixels[c_len*2] = asd->c[lli].at.x;
     pixels[c_len*2+1] = asd->c[lli].at.y; 
@@ -616,12 +651,12 @@ point_arr* basier3d(double*xx,double*yy,double*zz,int n,float rr, float gg, floa
     double bcy = 0;
     double bcz = 0;
     for(int i = 0; i <=n;i++){
-      double pp = binominal(n,i) * pow((1 - t),(n - i)) * pow(t,i);
+      double pp = binomial(n,i) * pow((1 - t),(n - i)) * pow(t,i);
       bcx +=  pp * xx[i];
       bcy +=  pp * yy[i];
       bcz +=  pp * zz[i];
       //if(ii==3){
-      //  printf("pp: %f bi : %f p1 : %f p2 : %f| %f, %f, %f\n",pp,binominal(n,i),bcx,bcy,bcz,pow((1-t),(n-i)),pow(t,i));
+      //  printf("pp: %f bi : %f p1 : %f p2 : %f| %f, %f, %f\n",pp,binomial(n,i),bcx,bcy,bcz,pow((1-t),(n-i)),pow(t,i));
       //}
     }
     //int ii = floor(100*(double)(t/1.0));
@@ -908,7 +943,7 @@ int main(int argc,char*argv[]){
     
     glfw_load(w);
     //break;
-    int mod_move=5;
+    int mod_move=2;
     double run_mul=2;
     //usleep(10000);
     glfwPollEvents(); 
@@ -991,7 +1026,7 @@ int main(int argc,char*argv[]){
       NUU-=0.001;
     printf("%f\n",NUU);*/
     //printf("%f %f %f\n",plr_y,cosf(plr_y*0.01),sinf(plr_y*0.01));
-    //usleep(1000*1000/60);
+    usleep(1000*1000/60);
     glfw_clear(w); 
     
     if(glfwWindowShouldClose(w)||(glfwGetKey(w,GLFW_KEY_Q)))break;
@@ -1014,4 +1049,5 @@ int main(int argc,char*argv[]){
   glDeleteShader(prog);
   info("killed window:p");
   return 0;
+	
 }
