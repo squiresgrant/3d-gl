@@ -474,8 +474,7 @@ void perspective_proj(GLFWwindow* b,point_arr* c,double ctx,double cty,double ct
     //double b1y = (ux2 - ux1);
     //double a1c = (ux2*a1x + uy2*b1y);
     //printf("%fx+%fy=%f\n",a1x,b1y,a1c); 
-    
-		double x1 = ma_to_mi?max_t:min_t;
+    double x1 = ma_to_mi?max_t:min_t;
     double x2 = ma_to_mi?lmin_t:lmax_t;
     double y1 = uy1;
     double y2 = uy2;
