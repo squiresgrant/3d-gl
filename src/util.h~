@@ -4,9 +4,9 @@
 #ifndef __util__
 #define __util__
 #include "string.h"
-#define greater(a,b) ((a)>(b)?(a):(b))
-#define lesser(a,b) ((a)>(b)?(b):(a))
-#define diff(a,b) ((a)>(b)?(a)-(b):(b)-(a))
+#define greater(a,b) (a>b?a:b)
+#define lesser(a,b) (a>b?b:a)
+#define diff(a,b) (a>b?a-b:b-a)
 #define malloc(X) malloc(X); mmalloc();
 void mmalloc();
 #define free(X) free(X); ffree();

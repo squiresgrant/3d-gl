@@ -284,11 +284,7 @@ void perspective_proj(GLFWwindow* b,point_arr* c,double ctx,double cty,double ct
       int p_b4 = 0;
       double ttt2 = 1.0;
       //printf("%f\n",NUU);
-      
-      //
-      //todo: start search after pointer leaves the first line,
-      //      then stop when it hits the second line
-      //
+     
       int found1 = 1;
       int found2 = 1;
       for(int jj = 0; jj<=dclen-1; jj++){
@@ -424,12 +420,12 @@ void perspective_proj(GLFWwindow* b,point_arr* c,double ctx,double cty,double ct
     for(int zzi2 = 0; zzi2!=trline->at[zzi].len;zzi2++){
       //printf("(%f %f):\n",trline.at[zzi].at[zzi2*2],trline.at[zzi].at[zzi2*2+1]); 
       if(max_t<trline->at[zzi].at[zzi2*2]){
-      max_t = trline->at[zzi].at[zzi2*2];
-      max2_t = trline->at[zzi].at[zzi2*2+1];
+      	max_t = trline->at[zzi].at[zzi2*2];
+      	max2_t = trline->at[zzi].at[zzi2*2+1];
       }
       if(min_t>=trline->at[zzi].at[zzi2*2]){
-      min_t = trline->at[zzi].at[zzi2*2];
-      min2_t = trline->at[zzi].at[zzi2*2+1];
+      	min_t = trline->at[zzi].at[zzi2*2];
+      	min2_t = trline->at[zzi].at[zzi2*2+1];
       }
       //min_t = (min_t>trline.at[zzi].at[zzi2]?trline.at[zzi].at[zzi2]:min_t); 
     }
@@ -447,57 +443,45 @@ void perspective_proj(GLFWwindow* b,point_arr* c,double ctx,double cty,double ct
     double ux1, uy1, ux2, uy2;
     int ma_to_mi = 0;
 		if (di > di2) {
-    ux1 = max_t;
-    uy1 = max2_t;
-    ux2 = lmin_t;
-    uy2 = lmin2_t;
-		ma_to_mi=1;
+    	ux1 = max_t;
+    	uy1 = max2_t;
+    	ux2 = lmin_t;
+    	uy2 = lmin2_t;
+			ma_to_mi=1;
     } else {
-    ux1 = min_t;
-    uy1 = min2_t;
-    ux2 = lmax_t;
-    uy2 = lmax2_t;
+    	ux1 = min_t;
+    	uy1 = min2_t;
+    	ux2 = lmax_t;
+    	uy2 = lmax2_t;
     }
     //printf("%f %f >> %f %f (f,%f) | %f %f\n",di,di2,ux1,uy1,min_t,ux2,uy2);
     color2 = 1.0f;
-    //printf("%f\n",color2);
-		
-    
-    if(ma_to_mi){
-			//printf("%f -> %f | %f for %f\n",max_t,lmin_t,diff(max_t,lmin_t)/asd->len,asd->len);
-		} else {
-			//printf("%f -> %f | %f for %f\n",min_t,lmax_t,diff(min_t,lmax_t)/asd->len,asd->len);
-		}
-		
-		//y - y1 = m(x - x1)
-    //double a1x = (uy2 - uy1);
-    //double b1y = (ux2 - ux1);
-    //double a1c = (ux2*a1x + uy2*b1y);
-    //printf("%fx+%fy=%f\n",a1x,b1y,a1c); 
     
 		double x1 = ma_to_mi?max_t:min_t;
     double x2 = ma_to_mi?lmin_t:lmax_t;
-    double y1 = uy1;
-    double y2 = uy2;
-    double m1 = (y2-y1)/(x2-x1);
+		double ite = ((float)get_w()/4);
+	
+		double ite1 = fabs(max_t/ite);
+		double ite2 = fabs(lmax_t/ite);
+	
+		double y1 = uy1;
+    double y2 = uy2; 	
 		
-		double bb[] = {x1,x2};
-    double bb2[] = {y1, y2};
-    point_arr* asd = basier2d(bb,bb2,2,0.1,0.1,0.1);
+		for(;(ma_to_mi?x1>=x2:x1<=x2);(ma_to_mi?(x1-=ite1):(x1+=ite2))){	
+		
+		double m1 = (y2-y1)/(x2-x1);
+		double b1 = y1 - m1 * x1;
+		
 		
 		int coll = 0;
-		//printf("-\n");
-		//printf("%f -> %f\n",x1,x2);
 		for(int yyu = 0; yyu!=fc_len-1; yyu++){ 
-      
-      
+     
       double x3 = pixels[yyu*2];
       double x4 = pixels[(yyu+1)*2];
       double y3 = pixels[yyu*2+1];
       double y4 = pixels[(yyu+1)*2+1];
       double m2 = (y4-y3)/(x4-x3);
-      
-      double b1 = y1 - m1 * x1;
+       
       double b2 = y3 - m2 * x3;
 
       double nsx = (b2-b1)/(m1-m2);
@@ -508,7 +492,6 @@ void perspective_proj(GLFWwindow* b,point_arr* c,double ctx,double cty,double ct
 					||(diff(nsx,x2)<FL_DIS&&diff(nsy,y2)<FL_DIS)
 					||(diff(nsx,x1)<FL_DIS&&diff(nsy,y1)<FL_DIS))
           continue;
-			//printf("aaa\n");
 			/*
       pixels = realloc(pixels,sizeof *pixels *((c_len+1)*4));
       colors = realloc(colors,sizeof *colors *((c_len+1)*5));  
@@ -519,28 +502,38 @@ void perspective_proj(GLFWwindow* b,point_arr* c,double ctx,double cty,double ct
       colors[c_len*3+2] = 1.0f;//-yyu/(fc_len-1); 
       c_len++;*/
 			coll=1;
+			break;
 			//printf("aaa\n");
       //printf("%f,%f,%f,%f,%f,%f %f,%f,%f,%f,%f,%f,  %f %f\n",x1,y1,x2,y2,m1,b1, x3,y3,x4,y4,m2,b2,nsx,nsy);
       //printf("(%f,%f) -> (%f,%f) :: x:%f,y:%f\n",ux1,uy1,ux2,uy2,nsx,nsy); 
     }
     
-    
+		if(coll){
+			continue;
+		}
+		double bb[] = {x1,x2};
+    double bb2[] = {y1, y2};
+    point_arr* asd = basier2d(bb,bb2,2,0.1,0.1,0.1);
+		
     for(int lli = 0; !coll&&lli!=asd->len; lli++){
-    pixels = realloc(pixels,sizeof *pixels *((c_len+1)*4));
-    colors = realloc(colors,sizeof *colors *((c_len+1)*5)); 
-    double dd = 10;
-    //if(diff(asd->c[lli].at.x,ex)<(float)dd/get_w()&&diff(asd->c[lli].at.y,ey)<(float)dd/get_w())
-     // break;
-    pixels[c_len*2] = asd->c[lli].at.x;
-    pixels[c_len*2+1] = asd->c[lli].at.y; 
-    colors[c_len*3] = color2;
-    colors[c_len*3+1] = color;//vvi==3?0.1f:vvi==4?0.5f:1.0f; 
-    colors[c_len*3+2] = 0.0f; 
-    c_len++;
+    	pixels = realloc(pixels,sizeof *pixels *((c_len+1)*4));
+    	colors = realloc(colors,sizeof *colors *((c_len+1)*5)); 
+    	double dd = 10;
+    	//if(diff(asd->c[lli].at.x,ex)<(float)dd/get_w()&&diff(asd->c[lli].at.y,ey)<(float)dd/get_w())
+     	// break;
+    	pixels[c_len*2] = asd->c[lli].at.x;
+    	pixels[c_len*2+1] = asd->c[lli].at.y; 
+    	colors[c_len*3] = color2;
+    	colors[c_len*3+1] = color;//vvi==3?0.1f:vvi==4?0.5f:1.0f; 
+    	colors[c_len*3+2] = 0.0f; 
+    	c_len++;
     }
     free(asd->c);
     free(asd->vert);
     free(asd);
+		break;
+		}
+		/*
     pixels = realloc(pixels,sizeof *pixels *((c_len+1)*4));
     colors = realloc(colors,sizeof *colors *((c_len+1)*5)); 
     //ab_to_vp(nn1,nn2,get_w(),get_h(),abba->c[hhi].at.x,abba->c[hhi].at.y)
@@ -561,7 +554,7 @@ void perspective_proj(GLFWwindow* b,point_arr* c,double ctx,double cty,double ct
     colors[c_len*3] = color2;
     colors[c_len*3+1] = color;//vvi==3?0.1f:vvi==4?0.5f:1.0f; 
     colors[c_len*3+2] = 0.0f;
-    c_len++;
+    c_len++;*/
     }
     lmax_t = max_t;
     lmin_t = min_t;
