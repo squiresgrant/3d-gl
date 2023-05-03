@@ -1,15 +1,24 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include "string.h"
 #ifndef __util__
 #define __util__
-#include "string.h"
+static const double FL_DIS = 1e-10;
+static const double NaN = 0.0f/0.0f;
+
 #define greater(a,b) ((a)>(b)?(a):(b))
 #define lesser(a,b) ((a)>(b)?(b):(a))
 #define diff(a,b) ((a)>(b)?(a)-(b):(b)-(a))
 #define malloc(X) malloc(X); mmalloc();
-void mmalloc();
 #define free(X) free(X); ffree();
+#define err(s,f,...) err_m(s,f,__FILE__,__LINE__,##__VA_ARGS__);
+#define warn(s) warn_m(s,__FILE__,__LINE__);
+#define info(s) info_m(s,__FILE__,__LINE__);
+#define logm(s) log_m(s,__FILE__,__LINE__);
+
+double binomial(int n, int k);
+void mmalloc();
 void ffree();
 void err_m(char*,void (*)(int),char*,int);
 void warn_m(char*,char*,int ,...);
@@ -20,10 +29,5 @@ void sig_handle(void);
 unsigned int_len(const unsigned n);
 char* force_ca_length(char*inp,int len);
 void pexit(int s);
-
-#define err(s,f,...) err_m(s,f,__FILE__,__LINE__,##__VA_ARGS__);
-#define warn(s) warn_m(s,__FILE__,__LINE__);
-#define info(s) info_m(s,__FILE__,__LINE__);
-#define logm(s) log_m(s,__FILE__,__LINE__);
 
 #endif

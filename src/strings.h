@@ -2,16 +2,7 @@
 #include <stdlib.h>
 #ifndef __str__
 #define __str__
-//#define init_str(buffer) (buffer); \
-    {buffer = (char*)malloc(sizeof(char));\
-    buffer[0]='\0';}
-//#define str_size(str,sizeb) (sizeb); \
-        for(sizeb=0;;sizeb++)if(str[sizeb]=='\0')break;
-//#define str_push(str,ch)\
-    int size_y = str_size(str);\
-    str = (char*)realloc(str,sizeof(char*)*(size_y+1));\
-    str[size_y]=ch;\
-    str[size_y+1]='\0';
+
 typedef struct {
   char*str;
   int len;

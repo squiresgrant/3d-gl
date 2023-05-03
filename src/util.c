@@ -4,11 +4,19 @@
 #include <math.h>
 #include "strings.h"
 double allocs = 0;
-//#define malloc(X) mmalloc(X);
+int forced_length = 15;
+double binomial(int n, int k){
+  if(n==k)
+    return 1.0;
+  double v = 1.0; 
+  for(int i = 1; i<=k; i++){
+    v=v*((float)(n+1-i)/i);
+  } 
+  return v;
+}
 void mmalloc(){
   allocs++; 
 }
-//#define free(X) ffree(X);
 void ffree(){
   allocs--;
 }
@@ -19,6 +27,7 @@ void pexit(int s){
   exit(s);
 }
 void sig_handle(void){
+	if(log_level<=-1) return;
   if(allocs>0){
     char ssa[45];
     sprintf(ssa,"%s | (found %i)","uneven allocations, memory leak(s)",(int)nearbyint(allocs));
@@ -68,11 +77,11 @@ char* force_ca_length(char*inp,int len){
   return nya;
 }
 void err_m(char*ca,void (*cb)(int),char*f,int l){
-  if(log_level!=-1){ 
+  if(log_level>-1){ 
    int len = ca_size(f) + int_len(l); 
    char nn[len]; 
    sprintf(nn,"%s:%i",f,l);
-   char* aa = force_ca_length(nn,15);
+   char* aa = force_ca_length(nn,forced_length);
    printf("\x1b[90m%s \x1b[31m[ !err ]\x1b[0m %s\n",aa,ca);
    free(aa); 
   } 
@@ -84,7 +93,7 @@ void warn_m(char*ca,char*f,int l,...){
   int len = ca_size(f) + int_len(l); 
   char nn[len]; 
   sprintf(nn,"%s:%i",f,l);
-  char* aa = force_ca_length(nn,15);
+  char* aa = force_ca_length(nn,forced_length);
   printf("\x1b[90m%s \x1b[33m[ warn ]\x1b[0m %s\n",aa,ca);
   free(aa);
 }
@@ -94,18 +103,18 @@ void info_m(char*ca,char*f,int l,...){
   int len = ca_size(f) + int_len(l); 
   char nn[len]; 
   sprintf(nn,"%s:%i",f,l);
-  char* aa = force_ca_length(nn,15);
+  char* aa = force_ca_length(nn,forced_length);
   printf("\x1b[90m%s [ info ] %s\x1b[0m\n",aa,ca);
   free(aa);
 }
 void log_m(char*ca,char*f,int l,...){
-  if(log_level<0)
+  if(log_level<2)
     return;
   int len = ca_size(f) + int_len(l); 
   char nn[len]; 
   sprintf(nn,"%s:%i",f,l);
-  char* aa = force_ca_length(nn,15);
-  printf("\x1b[35m%s [ log  ] \x1b[0m%s\n",aa,ca);
+  char* aa = force_ca_length(nn,forced_length);
+  printf("\x1b[35m%s [ log  ] \x1b[90m%s\x1b[0m\n",aa,ca);
   free(aa);
 }
 void flag_handle(int argc,char* argv[]){
@@ -117,10 +126,10 @@ void flag_handle(int argc,char* argv[]){
           break;
         switch(argv[i][y]){
           case 'q':
-            log_level=-1;
+            log_level-=1;
           break;
           case 'd':case 'v':
-            log_level=2;
+            log_level+=1;
           break;        
         }
       }

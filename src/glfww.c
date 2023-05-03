@@ -1,8 +1,3 @@
-#include <stdio.h>
-#include "util.h"
-#include <unistd.h>
-#include <stdlib.h>
-#include <math.h>
 #include "glfww.h"
 int w,h;
 
@@ -25,7 +20,7 @@ GLFWwindow* glfw_init(){
   int w,h;
   glfwGetFramebufferSize(window,&w,&h);
   glViewport(0,0,w,h);
-  info("yay:D i made a window uwu");
+  logm("yay:D i made a window uwu");
   return window;
   /*
   while(!glfwWindowShouldClose(window)){
@@ -46,7 +41,6 @@ GLFWwindow* glfw_init(){
 }
 void refresh_size(GLFWwindow*wi){
   glfwGetFramebufferSize(wi,&w,&h);
-  //printf("%i,%i\n",w,h);
 }
 int get_w(){
   return w;
@@ -118,6 +112,25 @@ void glfw_square(GLFWwindow* wi,int x, int y, int r){
     }
   }
   glEnd();
+}
+GLuint vshader_comp(const char* shader_src){
+  GLuint vertid = glCreateShader(GL_VERTEX_SHADER);
+  glShaderSource(vertid,1,(const GLchar**)&shader_src, NULL);
+  glCompileShader(vertid);
+  return vertid;
+}
+GLuint fshader_comp(const char* shader_src){
+  GLuint fragid = glCreateShader(GL_FRAGMENT_SHADER);
+  glShaderSource(fragid,1,(const GLchar**)&shader_src, NULL);
+  glCompileShader(fragid);
+  return fragid;
+}
+GLuint build_shader(GLuint vertid, GLuint fragid){
+  GLuint progid = glCreateProgram();
+  glAttachShader(progid,vertid);
+  glAttachShader(progid,fragid);
+  glLinkProgram(progid);
+  return progid;
 }
 int __glw_main(){
   GLFWwindow* w = glfw_init();

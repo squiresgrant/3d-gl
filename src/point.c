@@ -3,10 +3,9 @@
 #include <time.h>
 #include <math.h>
 #include "glfww.h"
+#include "util.h"
 #include <unistd.h>
-double NUU = 0.0;
-double FL_DIS = 1e-10;
-double NaN = 0.0f/0.0f;
+
 
 typedef struct {
   double x;
@@ -65,16 +64,7 @@ typedef struct {
   double vlen;
   double len;
 } point_arr;
-double binomial(int n, int k){
-  if(n==k)
-    return 1.0;
-  double v = 1.0; 
-  for(int i = 1; i<=k; i++){
-    v=v*((float)(n+1-i)/i);
-  } 
-  return v;
-}
-int ma = 4;
+
 
 typedef struct {
   GLfloat* at;
@@ -85,7 +75,7 @@ typedef struct {
   int len;
 } glfl_m;
 GLuint prog;
-const char* vshader_src = 
+static const char* vshader_src = 
   "#version 330\n"
   "layout (location = 0) in vec3 pos;\n"
   "layout (location = 1) in vec3 color;\n"
@@ -94,32 +84,14 @@ const char* vshader_src =
   "ncolor = color;\n"
   "gl_Position = vec4(pos,1.0);\n" 
   "};";
-const char* fshader_src = 
+static const char* fshader_src = 
   "#version 330\n"
   "in vec3 ncolor;\n"
   "out vec3 color;\n"
   "void main(){\n"
   "gl_FragColor = vec4(ncolor,1.0);\n"
   "};";
-GLuint vshader_comp(const char* shader_src){
-  GLuint vertid = glCreateShader(GL_VERTEX_SHADER);
-  glShaderSource(vertid,1,(const GLchar**)&shader_src, NULL);
-  glCompileShader(vertid);
-  return vertid;
-}
-GLuint fshader_comp(const char* shader_src){
-  GLuint fragid = glCreateShader(GL_FRAGMENT_SHADER);
-  glShaderSource(fragid,1,(const GLchar**)&shader_src, NULL);
-  glCompileShader(fragid);
-  return fragid;
-}
-GLuint build_shader(GLuint vertid, GLuint fragid){
-  GLuint progid = glCreateProgram();
-  glAttachShader(progid,vertid);
-  glAttachShader(progid,fragid);
-  glLinkProgram(progid);
-  return progid;
-}
+
 point_arr* basier2d(double*xx,double*yy,int n,float rr, float gg, float bb){ 
   
   n-=1;
@@ -711,7 +683,7 @@ int main(int argc,char*argv[]){
   GLuint fid = fshader_comp(fshader_src);
   prog = build_shader(vid,fid);
   glUseProgram(prog); 
-  info("built shaders");
+  logm("built shaders");
   
   
   /*
@@ -851,6 +823,6 @@ int main(int argc,char*argv[]){
   glDeleteShader(vid);
   glDeleteShader(fid);
   glDeleteShader(prog);
-  info("killed window:p");
+  logm("killed window:p");
   return 0;	
 }
