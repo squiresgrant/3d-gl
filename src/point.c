@@ -1,11 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
+
 #include <math.h>
 #include "glfww.h"
 #include "util.h"
 #include <unistd.h>
-
+#include <time.h>
 
 typedef struct {
   double x;
@@ -863,8 +863,17 @@ int main(int argc,char*argv[]){
   clock_t t;
   double frames = 0;
   t = clock();
-  for(;;){
-    
+  double frame_limit = 100;
+	double single_frame = (float)1/frame_limit*1E+6;
+	char sf_time_msg[60];
+	sprintf(sf_time_msg,"%.3fµs per frame ≈ %.3ffps",single_frame,frame_limit);
+	info(sf_time_msg);
+	
+	struct timespec start_t, end_t,tem_t2, tem_t;
+	
+	clock_gettime(CLOCK_REALTIME, &start_t);
+	for(;;){	
+	 	clock_gettime(CLOCK_REALTIME,&tem_t);
     double p1 = plr_x*0.01; 
     double p2 = plr_y*0.01;
     double p3 = 0;
@@ -950,15 +959,23 @@ int main(int argc,char*argv[]){
       pl_y+=sinf((half_max_r+plr_y)*0.01)*mul; 
     }
     
-    usleep(1000*1000/60);
-    glfw_clear(w); 
+		if(single_frame>0){
+	 		clock_gettime(CLOCK_REALTIME,&tem_t2);
+			double tt2_diff = (tem_t2.tv_sec - tem_t.tv_sec) * 1000.0 +
+                    (tem_t2.tv_nsec - tem_t.tv_nsec) / 1000000.0; 
+			usleep(greater(single_frame - tt2_diff *1000,1));
+		}
+		glfw_clear(w); 
     
     if(glfwWindowShouldClose(w)||(glfwGetKey(w,GLFW_KEY_Q)))break; 
     frames+=1;
-    if(((double)clock() - t)/CLOCKS_PER_SEC > 1){
+		clock_gettime(CLOCK_REALTIME, &end_t);
+		double tt_diff = (end_t.tv_sec - start_t.tv_sec) * 1000.0 +
+                    (end_t.tv_nsec - start_t.tv_nsec) / 1000000.0;
+    if(tt_diff>=1000){
       printf("%f fps\n",frames);
       frames=0;
-      t = clock();
+      clock_gettime(CLOCK_REALTIME,&start_t);
     }
   }
   free(a->c);
