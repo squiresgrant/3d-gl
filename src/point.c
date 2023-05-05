@@ -972,9 +972,11 @@ int main(int argc,char*argv[]){
 		clock_gettime(CLOCK_REALTIME, &end_t);
 		double tt_diff = (end_t.tv_sec - start_t.tv_sec) * 1000.0 +
                     (end_t.tv_nsec - start_t.tv_nsec) / 1000000.0;
-    if(tt_diff>=1000){
-      printf("%f fps\n",frames);
-      frames=0;
+    if(tt_diff>1000){
+			char fpsc_dis[40];
+      sprintf(fpsc_dis,"%f fps",(double)(tt_diff/1000*frame_limit)*0.5+frames*0.5);
+      logm(fpsc_dis);
+			frames=0;
       clock_gettime(CLOCK_REALTIME,&start_t);
     }
   }
