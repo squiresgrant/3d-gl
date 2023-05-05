@@ -4,7 +4,7 @@
 #include "string.h"
 #ifndef __util__
 #define __util__
-static const double FL_DIS = 1e-10;
+static const double FL_DIS = 1e-7;
 static const double NaN = 0.0f/0.0f;
 
 #define greater(a,b) ((a)>(b)?(a):(b))
