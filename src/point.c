@@ -630,7 +630,7 @@ void join_cords(point_arr* a, point_arr* b){
   a->vert = realloc(a->vert,sizeof(*a->vert)*(a->vlen+b->vlen)*60);
   a->len+=b->len;
   a->vlen+=b->vlen;
-  if(a->c==NULL)
+  if(a->c==NULL||a->vert==NULL)
     err("failed to reallocate cords",pexit);
   for(int i = 0; i<=b->len; i++){
     a->c[a_len+i].at = b->c[i].at; 
@@ -693,6 +693,7 @@ point_arr* polygon3d(double* vx, double*vy, double* vz, int n){
 		pa->c[i].color.b = 1.0f;
 	}
 	pa->len = n;
+	pa->vlen= n;
   return pa;
 }
 point_arr* square_gen(double* tl, double* tr, double* bl, double*br,float rr, float gg, float bb){
@@ -719,7 +720,8 @@ point_arr* square_gen(double* tl, double* tr, double* bl, double*br,float rr, fl
   join_cords(a,b);
   join_cords(a,c);
   join_cords(a,d);
-  free(b->c);
+  printf("done\n");
+	free(b->c);
   free(b->vert);
   free(b);
   free(c->c);
@@ -785,7 +787,8 @@ point_arr* cube_gen(double* tl, double* tr, double* bl, double*br,
                double* tl2, double* tr2, double* bl2, double*br2,
                     float rr, float gg, float bb){
    
-  point_arr* a = square_gen(tl,tr,bl,br,rr,gg,bb); 
+  
+	point_arr* a = square_gen(tl,tr,bl,br,rr,gg,bb); 
   point_arr* b = square_gen(tl2,tr2,bl2,br2,rr,gg,bb); 
   double s;
   join_cords(a,b);
@@ -822,9 +825,9 @@ int main(int argc,char*argv[]){
   refresh_size(w);
   GLenum err = glewInit();
   if (err != GLEW_OK)
-    exit(1); // or handle the error in a nicer way
-  if (!GLEW_VERSION_2_1)  // check that the machine supports the 2.1 API.
-    exit(1); // or handle the error in a nicer way
+    pexit(1); 
+  if (!GLEW_VERSION_2_1)  
+    pexit(1);
   GLuint vid = vshader_comp(vshader_src);
   GLuint fid = fshader_comp(fshader_src);
   prog = build_shader(vid,fid);
@@ -832,28 +835,61 @@ int main(int argc,char*argv[]){
   logm("built shaders");
   
   
-  /*
-  double tl2[3] = {5.0,200.0,400.0};
-  double tr2[3] = {200.0,200.0,400.0};
-  double bl2[3] = {5.0,5.0,200.0};
-  double br2[3] = {200.0,5.0,200.0};
   
-  double tl1[3] = {5.0,200.0,200.0};
-  double tr1[3] = {200.0,200.0,200.0};
-  double bl1[3] = {5.0,5.0,5.0};
-  double br1[3] = {200.0,5.0,5.0};
-  point_arr* a = cube_gen(tl1,tr1,bl1,br1,tl2,tr2,bl2,br2,0.1f,0.1f,1.0f);
-  */double xx[8] = {0.0, 15.0, 50.0, 60.0,40.0,30.0, 0.0,0.0};
+  double tl[3] = {5.0,200.0,400.0};
+  double tr[3] = {200.0,200.0,400.0};
+  double bl[3] = {5.0,5.0,200.0};
+  double br[3] = {200.0,5.0,200.0};
+  
+  double tl2[3] = {5.0,200.0,200.0};
+  double tr2[3] = {200.0,200.0,200.0};
+  double bl2[3] = {5.0,5.0,5.0};
+  double br2[3] = {200.0,5.0,5.0};
+  float rr = 0.0;
+	float gg = 0.0;
+	float bb = 1.0;
+	//point_arr* a = cube_gen(tl1,tr1,bl1,br1,tl2,tr2,bl2,br2,0.1f,0.1f,1.0f);*/
+  /*double xx[8] = {0.0, 15.0, 50.0, 60.0,40.0,30.0, 0.0,0.0};
   double yy[8] = {5.0, 15.0, 30.0, 45.0,64.0, 45.0,55.0,5.0};
   double zz[8] = {50.0,50.0,50.0,50.0,50.0,50.0,50.0,50.0};
   point_arr* a = polygon3d(xx,yy,zz,8);
-  /*
+  
   double xx2[8] = {0.0, 15.0, 50.0, 60.0,20.0,10.0, 0.0,0.0};
   double yy2[8] = {5.0, 15.0, 30.0, 20.0,64.0, 45.0,55.0,5.0};
   double zz2[8] = {50.0,50.0,50.0,50.0,50.0,50.0,50.0,50.0};
   point_arr* a2 = polygon3d(xx2,yy2,zz2,8);
   */
-  int max_r = 630;
+	double xx1[5] = {5,50,50,5};
+	double yy1[5] = {5,5,50,50};
+	double zz1[5] = {5,5,5,5};
+	point_arr*a = polygon3d(xx1,yy1,zz1,5);
+	
+	double xx2[5] = {5,50,50,5};
+	double yy2[5] = {5,5,50,50};
+	double zz2[5] = {50,50,50,50};
+	point_arr*b = polygon3d(xx2,yy2,zz2,5);
+	
+	double xx3[5] = {5,5,5,5};
+	double yy3[5] = {5,5,50,50};
+	double zz3[5] = {50,5,5,50};
+	point_arr*c = polygon3d(xx3,yy3,zz3,5);
+	
+	double xx4[5] = {50,50,50,50};
+	double yy4[5] = {5,5,50,50};
+	double zz4[5] = {50,5,5,50};
+	point_arr*d = polygon3d(xx4,yy4,zz4,5);
+
+	double xx5[5] = {5,5,50,50};
+	double yy5[5] = {5,5,5,5};
+	double zz5[5] = {50,5,5,50};
+	point_arr*e = polygon3d(xx5,yy5,zz5,5);
+	
+	double xx6[5] = {5,5,50,50};
+	double yy6[5] = {50,50,50,50};
+	double zz6[5] = {50,5,5,50};
+	point_arr*f = polygon3d(xx6,yy6,zz6,5);
+	
+	int max_r = 630;
   double half_max_r = (double)max_r/2/2;
   double pl_x = 0;
   double pl_y = 0;
@@ -863,7 +899,7 @@ int main(int argc,char*argv[]){
   clock_t t;
   double frames = 0;
   t = clock();
-  double frame_limit = 100;
+  double frame_limit = 60;
 	double single_frame = (float)1/frame_limit*1E+6;
 	char sf_time_msg[60];
 	sprintf(sf_time_msg,"%.3fµs per frame ≈ %.3ffps",single_frame,frame_limit);
@@ -872,6 +908,7 @@ int main(int argc,char*argv[]){
 	struct timespec start_t, end_t,tem_t2, tem_t;
 	
 	clock_gettime(CLOCK_REALTIME, &start_t);
+	info("entering main loop");
 	for(;;){	
 	 	clock_gettime(CLOCK_REALTIME,&tem_t);
     double p1 = plr_x*0.01; 
@@ -882,7 +919,35 @@ int main(int argc,char*argv[]){
     double p6 = pl_x;
     
     glfl_ar* bba = perspective_proj(w,a,p1,p2,p3,p4,p5,p6);	
-		render_p(bba);    	
+		glfl_ar* bbb = perspective_proj(w,b,p1,p2,p3,p4,p5,p6);	
+		glfl_ar* bbc = perspective_proj(w,c,p1,p2,p3,p4,p5,p6);	
+		glfl_ar* bbd = perspective_proj(w,d,p1,p2,p3,p4,p5,p6);
+		glfl_ar* bbe = perspective_proj(w,e,p1,p2,p3,p4,p5,p6);	
+		glfl_ar* bbf = perspective_proj(w,f,p1,p2,p3,p4,p5,p6);
+		join_glfl_a(bba,bbb);
+		join_glfl_a(bba,bbc);
+		join_glfl_a(bba,bbd);
+		join_glfl_a(bba,bbe);
+		join_glfl_a(bba,bbf);
+		render_p(bba);
+		
+		free(bbe->col);
+		free(bbe->pix);
+		free(bbe);
+		free(bbf->col);
+		free(bbf->pix);
+		free(bbf);
+		free(bbb->col);
+		free(bbb->pix);
+		free(bbb);
+
+		free(bbd->col);
+		free(bbd->pix);
+		free(bbd);
+		free(bbc->col);
+		free(bbc->pix);
+		free(bbc);
+
 		free(bba->col);
 		free(bba->pix);
 		free(bba); 
@@ -983,7 +1048,23 @@ int main(int argc,char*argv[]){
   free(a->c);
   free(a->vert);
   free(a);
-  glfwDestroyWindow(w);
+  free(b->c);
+  free(b->vert);
+  free(b);
+	free(c->c);
+  free(c->vert);
+  free(c);
+	free(d->c);
+  free(d->vert);
+  free(d);
+	free(e->c);
+  free(e->vert);
+  free(e);
+	free(f->c);
+  free(f->vert);
+  free(f);
+
+	glfwDestroyWindow(w);
   win_clean();
   glDeleteShader(vid);
   glDeleteShader(fid);

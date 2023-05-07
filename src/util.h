@@ -10,12 +10,23 @@ static const double NaN = 0.0f/0.0f;
 #define greater(a,b) ((a)>(b)?(a):(b))
 #define lesser(a,b) ((a)>(b)?(b):(a))
 #define diff(a,b) ((a)>(b)?(a)-(b):(b)-(a))
+
+#ifndef skip_memory_trace
 #define malloc(X) malloc(X); mmalloc();
 #define free(X) free(X); ffree();
+#endif
+
+#ifndef stfu
 #define err(s,f,...) err_m(s,f,__FILE__,__LINE__,##__VA_ARGS__);
 #define warn(s) warn_m(s,__FILE__,__LINE__);
 #define info(s) info_m(s,__FILE__,__LINE__);
 #define logm(s) log_m(s,__FILE__,__LINE__);
+#else 
+#define err(s,f,...);
+#define warn(s);
+#define info(s);
+#define logm(s);
+#endif 
 
 double binomial(int n, int k);
 void mmalloc();

@@ -27,7 +27,11 @@ void pexit(int s){
   exit(s);
 }
 void sig_handle(void){
+	#ifdef stfu 
+	return;
+	#endif
 	if(log_level<=-1) return;
+	#ifndef skip_memory_trace
   if(allocs>0){
     char ssa[45];
     sprintf(ssa,"%s | (found %i)","uneven allocations, memory leak(s)",(int)nearbyint(allocs));
@@ -35,13 +39,14 @@ void sig_handle(void){
   }
   if(allocs==0)
     info("even allocations, no internal leaks");
-  if(__signal==0){
-    printf("\x1b[90mexited with \x1b[32m\x1b[1msignal [ %i ] \x1b[0m\x1b[90mgraceful exit\x1b[0m (meow)\n",__signal); 
+	#endif
+	if(__signal==0){
+    printf("\x1b[90mexited with \x1b[32m\x1b[1msignal [ %i ] \x1b[0m\x1b[90mgraceful exit\x1b[0m (meow)",__signal); 
   } else if(__signal>0){
-    printf("\x1b[90mexited with \x1b[31m\x1b[1msignal [ %i ] \x1b[0m\x1b[90mgraceful exit\x1b[0m\n",__signal);
+    printf("\x1b[90mexited with \x1b[31m\x1b[1msignal [ %i ] \x1b[0m\x1b[90mgraceful exit\x1b[0m",__signal);
     //extra cleanup if needed
   } else {
-    printf("\x1b[90mexited with \x1b[31m\x1b[1msignal [ %i ] \x1b[0m\x1b[90mnon-graceful exit\x1b[0m\n",__signal);
+    printf("\x1b[90mexited with \x1b[31m\x1b[1msignal [ %i ] \x1b[0m\x1b[90mnon-graceful exit\x1b[0m",__signal);
   }
 }
 unsigned int_len(const unsigned n) {
@@ -130,7 +135,7 @@ void flag_handle(int argc,char* argv[]){
           break;
           case 'd':case 'v':
             log_level+=1;
-          break;        
+          break;	
         }
       }
     }
