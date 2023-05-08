@@ -13,12 +13,12 @@ typedef struct {
   double z;
   int vertex;
 } cord;
-cord poi_d(double x1,double y1,double x2, double y2,int len,GLfloat* pixels,int shortest){
+cord poi_d(double x1,double y1,double x2, double y2,int len,GLfloat* pixels,int shortest,int ign){
 	double m1 = (y2-y1)/(x2-x1);	
 	double b1 = y1 - m1 * x1;
 	if(x2-x1==0){
 		m1=0;
-		b1=0;
+		b1=0;	
 	}
 	cord aa;
 	aa.x = 0;
@@ -26,7 +26,7 @@ cord poi_d(double x1,double y1,double x2, double y2,int len,GLfloat* pixels,int 
 	aa.z = -1;
 		
 	for(int yyu = 0; yyu!=len-1; yyu++){ 
-     
+    //if(yyu==ign||yyu-1==ign||yyu+1==ign)continue;
   	double x3 = pixels[yyu*2];
     double x4 = pixels[(yyu+1)*2];
     double y3 = pixels[yyu*2+1];
@@ -42,22 +42,20 @@ cord poi_d(double x1,double y1,double x2, double y2,int len,GLfloat* pixels,int 
 			nsx=x3;
 			nsy=m1*nsx+b1;
 		}
-		//printf("[%i]	%f %f %f %f\n",yyu,m2,b2,nsx,nsy); 
-    if(!(nsx >= greater(lesser(x1, x2), lesser(x3, x4)) && nsx <= lesser(greater(x1, x2), greater(x3, x4)))
-    ||!(nsy >= greater(lesser(y1, y2), lesser(y3, y4)) && nsy <= lesser(greater(y1, y2), greater(y3, y4)))   
-					||(diff(nsx,x2)<FL_DIS&&diff(nsy,y2)<FL_DIS)
-					||(diff(nsx,x1)<FL_DIS&&diff(nsy,y1)<FL_DIS)
-        	||(diff(nsx,x3)<FL_DIS&&diff(nsy,y3)<FL_DIS)
-					||(diff(nsx,x4)<FL_DIS&&diff(nsy,y4)<FL_DIS))  
-				continue;		
+		if(!(nsx >= greater(lesser(x1, x2), lesser(x3, x4)) && nsx <= lesser(greater(x1, x2), greater(x3, x4)))
+    	||!(nsy >= greater(lesser(y1, y2), lesser(y3, y4)) && nsy <= lesser(greater(y1, y2), greater(y3, y4))))
+				continue;
+
+		if((diff(nsx,x2)<FL_DIS&&diff(nsy,y2)<FL_DIS)
+			||(diff(nsx,x1)<FL_DIS&&diff(nsy,y1)<FL_DIS))
+				continue;
+
 			if(aa.z==-1||pow(x1-nsx,2)+pow(y1-nsy,2)<pow(x1-aa.x,2)+pow(y1-aa.y,2)){	
 				aa.x = nsx;
 				aa.y = nsy;
 				
 			}
-			aa.z++;	
-			//if(!shortest)
-		//		printf("%f %f | %i %i > %f %f | %f\n",nsx,nsy,fabs(nsx-x2)<=FL_DIS,fabs(nsy-y2)<=FL_DIS,fabs(nsx-x2),fabs(nsy-y2),FL_DIS);
+			aa.z++;		
 			if(!shortest)
 				break; 
   }
@@ -79,7 +77,10 @@ typedef struct {
   double vlen;
   double len;
 } point_arr;
-
+typedef struct {
+	point_arr* at;
+	int len;
+} point_m;
 
 typedef struct {
   GLfloat* at;
@@ -94,17 +95,21 @@ static const char* vshader_src =
   "#version 330\n"
   "layout (location = 0) in vec3 pos;\n"
   "layout (location = 1) in vec3 color;\n"
-  "out vec3 ncolor;\n"
-  "void main(){\n"
+  "layout (location = 2) in float trans;\n"
+	"out vec3 ncolor;\n"
+  "out float ntrans;\n"
+	"void main(){\n"
   "ncolor = color;\n"
-  "gl_Position = vec4(pos,1.0);\n" 
+  "ntrans = trans;\n"
+	"gl_Position = vec4(pos,1.0);\n" 
   "};";
 static const char* fshader_src = 
   "#version 330\n"
   "in vec3 ncolor;\n"
-  "out vec3 color;\n"
+  "in float ntrans;\n"
+	"out vec3 color;\n"
   "void main(){\n"
-  "gl_FragColor = vec4(ncolor,1.0);\n"
+  "gl_FragColor = vec4(ncolor[0],ncolor[1],ncolor[2],0.2);\n"
   "};";
 
 point_arr* basier2d(double*xx,double*yy,int n,float rr, float gg, float bb){ 
@@ -112,18 +117,19 @@ point_arr* basier2d(double*xx,double*yy,int n,float rr, float gg, float bb){
   n-=1;
 
   int lle = diff(get_w(),greater(yy[0]+yy[1],xx[0]+xx[1]))/2;
-  double aaar = (1.0/lle);
+  lle+=1;
+	double aaar = (1.0/lle);
   
   point_arr* pa;
   pa = malloc(sizeof(*pa));
   pa->c = malloc(sizeof(*pa->c)*(lle*60));
   pa->vert = malloc(sizeof(*pa->vert)*(n*60));
 
-  if(pa->c==NULL||pa->vert==NULL)
+  if(pa==NULL||pa->c==NULL||pa->vert==NULL)
     err("failed to allocate basier array",pexit);
   
-  pa->len = lle;
-  for(int iy = 0; iy<=lle;iy+=1){
+  pa->len = lle;	
+	for(int iy = 0; iy<=lle;iy+=1){
     double t = aaar*iy;
     double bcx = 0;
     double bcy = 0;
@@ -150,14 +156,18 @@ point_arr* basier2d(double*xx,double*yy,int n,float rr, float gg, float bb){
     pa->vert[i].at.y = yy[i]; 
   }
   pa->vlen = n; 
-  return pa;
+  if(pa==NULL||pa->c==NULL||pa->vert==NULL)
+    err("failed to allocate basier array",pexit);
+	return pa;
 }
 typedef struct {
 	GLfloat* pix;
 	GLfloat* col;
+	GLfloat* trans;
 	int len;
 } glfl_ar;
 void render_p(glfl_ar* bba){
+	//glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC1_ALPHA);
 	GLuint verta;
   glGenVertexArrays(1,&verta);
   glBindVertexArray(verta);
@@ -180,18 +190,30 @@ void render_p(glfl_ar* bba){
   glBindBuffer(GL_ARRAY_BUFFER,colb);
   glVertexAttribPointer(1,3,GL_FLOAT,GL_FALSE,0,(void*)0);
 
-  glDrawArrays(GL_POINTS,0,bba->len);
-  glDeleteBuffers(1,&vetb);
+  GLuint trab;
+  glGenBuffers(1,&trab);
+  glBindBuffer(GL_ARRAY_BUFFER,trab);
+  glBufferData(GL_ARRAY_BUFFER,sizeof(*bba->trans)*(bba->len*2),bba->trans,GL_STATIC_DRAW);
+
+  glEnableVertexAttribArray(2);
+  glBindBuffer(GL_ARRAY_BUFFER,trab);
+  glVertexAttribPointer(2,1,GL_FLOAT,GL_FALSE,0,(void*)0);
+
+	glDrawArrays(GL_POINTS,0,bba->len);
+  glDeleteBuffers(1,&trab);
+	glDeleteBuffers(1,&vetb);
   glDeleteBuffers(1,&colb);
 }
 glfl_ar* perspective_proj(GLFWwindow* b,point_arr* c,double ctx,double cty,double ctz,double cx, double cy, double cz){ 
-  GLfloat* pixels = malloc(sizeof(*pixels)*((1+c->len)*4));
+
+	GLfloat* pixels = malloc(sizeof(*pixels)*((1+c->len)*3));
   GLfloat* colors = malloc(sizeof(*colors)*((1+c->len)*4));
-  if(pixels==NULL||colors==NULL)
+  GLfloat* trans = malloc(sizeof(*trans)*((1+c->len)*2));
+	if(pixels==NULL||colors==NULL||trans==NULL)
     err("failed to allocate perspective array:(",pexit);
-   
+
   double coy = cos(cty);
-  double siz = sin(ctz);
+  double sinz = sin(ctz);
   double coz = cos(ctz);
   double six = sin(ctx);
   double siy = sin(cty);
@@ -211,9 +233,9 @@ glfl_ar* perspective_proj(GLFWwindow* b,point_arr* c,double ctx,double cty,doubl
     double ay = c->c[i].at.y;
     double az = c->c[i].at.z;
     
-    double eyz = (coz*(ay-cy)-siz*ax-cx);
-    double yzm = (coy*(az-cz) + siy*(siz*(ay-cy) + coz*(ax-cx)));
-    double dx = coy * (siz*(ay-cy) + coz*(ax-cx)) - (siy*(az-cz));
+    double eyz = (coz*(ay-cy)-sinz*ax-cx);
+    double yzm = (coy*(az-cz) + siy*(sinz*(ay-cy) + coz*(ax-cx)));
+    double dx = coy * (sinz*(ay-cy) + coz*(ax-cx)) - (siy*(az-cz));
     double dy = six * yzm + cox*eyz;
     double dz = cox * yzm - six*eyz; 
    
@@ -226,49 +248,68 @@ glfl_ar* perspective_proj(GLFWwindow* b,point_arr* c,double ctx,double cty,doubl
       colors[c_len*3] = c->c[i].color.r;
       colors[c_len*3+1] = c->c[i].color.g;
       colors[c_len*3+2] = c->c[i].color.b;
-      c_len++;
+      trans[c_len] = 0.5;
+			c_len++;
     }
   }
-  
+
   double fc_len = c_len;
   for(int i = 0; i<=fc_len-1; i++){
-    double x22[2] = {pixels[i*2],pixels[(i+1)*2]};
-    double y22[2] = {pixels[i*2+1],pixels[(i+1)*2+1]};
+
+		if(isinf(pixels[i*2]))
+			continue;
+    double x22[3] = {pixels[i*2],pixels[(i+1)*2]};
+    double y22[3] = {pixels[i*2+1],pixels[(i+1)*2+1]};
     point_arr* bas = basier2d(x22,y22,2,0.1f,0.1f,0.1f);
-    for(int zaa=0; zaa<=bas->len; zaa++){
-        pixels = realloc(pixels,sizeof *pixels *((c_len+1)*3));
-        colors = realloc(colors,sizeof *colors *((c_len+1)*4));    
-        pixels[c_len*2] = bas->c[zaa].at.x;
+		
+		pixels = realloc(pixels,sizeof(*pixels) *((c_len+2+bas->len)*3));
+
+		colors = realloc(colors,sizeof(*colors) *((c_len+2+bas->len)*4));
+
+		trans = realloc(trans,sizeof(*trans) *((c_len+2+bas->len)*2));
+		if(pixels==NULL||colors==NULL||trans==NULL)
+					err("can't reallocate AAA",pexit);
+		for(int zaa=0; zaa<=bas->len; zaa++){
+     	
+				pixels[c_len*2] = bas->c[zaa].at.x;
         pixels[c_len*2+1] = bas->c[zaa].at.y; 
-        colors[c_len*3] = 0.1f;
-        colors[c_len*3+1] = 1.0f; 
-        colors[c_len*3+2] = 1.0f; 
-        c_len++;
+        colors[c_len*3] = colors[i*3];
+        colors[c_len*3+1] = colors[i*3+1]; 
+        colors[c_len*3+2] = colors[i*3+2]; 
+        trans[c_len] = 0.5;
+				c_len++;
     }
+		
     free(bas->c);
     free(bas->vert);
     free(bas);
   }
-  double dclen = c_len;
+  
+	double dclen = c_len;
   int vvi = 0;
   //printf("---\n");
   glfl_m* trline = malloc(sizeof(*trline)*get_w()*30);
   trline->len = 0;
   trline->at = malloc(sizeof(*trline->at)*get_w()*40);
-  for(int i = 0; i<=fc_len; i++){
+  if(trline==NULL||trline->at==NULL)
+		pexit(54);
+	for(int i = 0; i<=fc_len; i++){
     if(c->c[i].at.vertex==1||1){ 
       if(pixels==NULL||colors==NULL)
-        abort();
-      vvi++;
+        pexit(55);
+      if(isinf(pixels[i*2]))
+				continue;
+			
+			vvi++;
       
       trline->at[trline->len].at = malloc(sizeof(*trline->at[trline->len].at)*(c_len+get_w()*2)*30);
       trline->at[trline->len].len = 0;
 			//printf("%f\n",dclen);
 			int le = 2222;
-			cord aaa = poi_d(pixels[i*2],pixels[i*2+1],le,pixels[i*2+1],c->len*2,pixels,1);
-			cord aab = poi_d(pixels[i*2],pixels[i*2+1],-le,pixels[i*2+1],c->len*2,pixels,1);
-			cord aac = poi_d(pixels[i*2],pixels[i*2+1],pixels[i*2],-le,c->len*2,pixels,1);
-			cord aad = poi_d(pixels[i*2],pixels[i*2+1],pixels[i*2],le,c->len*2,pixels,1);
+			cord aaa = poi_d(pixels[i*2],pixels[i*2+1],le,pixels[i*2+1],c->len*2,pixels,1,i);
+			cord aab = poi_d(pixels[i*2],pixels[i*2+1],-le,pixels[i*2+1],c->len*2,pixels,1,i);
+			cord aac = poi_d(pixels[i*2],pixels[i*2+1],pixels[i*2],-le,c->len*2,pixels,1,i);
+			cord aad = poi_d(pixels[i*2],pixels[i*2+1],pixels[i*2],le,c->len*2,pixels,1,i);
 
 			/*if(aac.z||aad.z==-1){
 				free(trline->at[trline->len].at);
@@ -279,20 +320,25 @@ glfl_ar* perspective_proj(GLFWwindow* b,point_arr* c,double ctx,double cty,doubl
 					fmod(aac.z,2)==1||fmod(aad.z,2)==1){
 				free(trline->at[trline->len].at);
 				continue;
-			}
-			//printf("a\n");
+			}	
 			if(aab.z!=-1)
 			{double aax[] = {pixels[i*2],aab.x};
-			double aay[] = {pixels[i*2+1],aab.y};
+			double aay[] = {pixels[i*2+1],aab.y};	
 			point_arr* frl = basier2d(aax,aay,2,0.1,0.1,0.1);
+			if(trans==NULL||pixels==NULL||colors==NULL)
+        	pexit(55);
 			for(int cci = 0; cci<=frl->len; cci++){
 				trline->at[trline->len].at[trline->at[trline->len].len*2] = frl->c[cci].at.x;
         trline->at[trline->len].at[trline->at[trline->len].len*2+1] = frl->c[cci].at.y;
 				pixels = realloc(pixels,sizeof *pixels *((c_len+1)*3)); 
       	colors = realloc(colors,sizeof *colors *((c_len+1)*4));
+				trans = realloc(trans,sizeof *trans *((c_len+1)*2));
+				if(trans==NULL||pixels==NULL||colors==NULL)
+        	pexit(55);
+				trans[c_len] = 0.5;
 				pixels[c_len*2] = frl->c[cci].at.x;
       	pixels[c_len*2+1] = frl->c[cci].at.y; 
-      	colors[c_len*3] = 0.1f;
+      	colors[c_len*3] = 1.0f;
       	colors[c_len*3+1] = 0.3f; 
       	colors[c_len*3+2] = 1.0f; 
       	c_len++;
@@ -305,15 +351,21 @@ glfl_ar* perspective_proj(GLFWwindow* b,point_arr* c,double ctx,double cty,doubl
 			if(aaa.z!=-1)
 			{double aax[] = {pixels[i*2],aaa.x};
 			double aay[] = {pixels[i*2+1],aaa.y};
+			//printf("a %f %f | %f %f\n",pixels[i*2],aab.x,pixels[i*2+1],aab.y);
 			point_arr* frl = basier2d(aax,aay,2,0.1,0.1,0.1);
+			if(trans==NULL||pixels==NULL||colors==NULL)
+        	pexit(55);
 			for(int cci = 0; cci<=frl->len; cci++){
 				trline->at[trline->len].at[trline->at[trline->len].len*2] = frl->c[cci].at.x;
         trline->at[trline->len].at[trline->at[trline->len].len*2+1] = frl->c[cci].at.y;
 				pixels = realloc(pixels,sizeof *pixels *((c_len+1)*3)); 
       	colors = realloc(colors,sizeof *colors *((c_len+1)*4));
+				trans = realloc(trans,sizeof *trans *((c_len+1)*2));
+				
+				trans[c_len] = 0.5;
 				pixels[c_len*2] = frl->c[cci].at.x;
       	pixels[c_len*2+1] = frl->c[cci].at.y; 
-      	colors[c_len*3] = 0.1f;
+      	colors[c_len*3] = 1.0f;
       	colors[c_len*3+1] = 0.3f; 
       	colors[c_len*3+2] = 1.0f; 
       	c_len++;
@@ -322,107 +374,9 @@ glfl_ar* perspective_proj(GLFWwindow* b,point_arr* c,double ctx,double cty,doubl
 			free(frl->c);
 			free(frl->vert);
 			free(frl);}
-			/*pixels = realloc(pixels,sizeof *pixels *((c_len+1)*3)); 
-      colors = realloc(colors,sizeof *colors *((c_len+1)*4));
-      //printf("%f %f\n",aaa.x,aaa.y);
-			pixels[c_len*2] = aaa.x;
-      pixels[c_len*2+1] = aaa.y; 
-      colors[c_len*3] = 0.1f;
-      colors[c_len*3+1] = 0.3f; 
-      colors[c_len*3+2] = 1.0f; 
-      c_len++;*/
-			/*
-      double ttt = -1.0;
-      int p_b = 0;
-      int p_b2 = 0;
-      int p_b3 = 0;
-      int p_b4 = 0;
-      double ttt2 = 1.0;
-     
-      int found1 = 1;
-      int found2 = 1;
-      
-			for(int jj = 0; jj<=dclen-1; jj++){
-        float sad = 3.0f;
-        float sad2 = 30.0f;
-        if(pixels[jj*2]<pixels[i*2]&&diff(pixels[jj*2],pixels[i*2])>(float)sad2/get_w()
-          &&diff(pixels[jj*2+1],pixels[i*2+1])<(float)sad/get_w()&&i!=jj){
-          p_b=1;
-          if(pixels[jj*2]>ttt)
-            ttt=pixels[jj*2];
-          
-        }
-        if(diff(pixels[jj*2],pixels[i*2])>(float)sad2/get_w()
-          &&diff(pixels[jj*2+1],pixels[i*2+1])<(float)sad/get_w()&&i!=jj&&
-          pixels[jj*2]>pixels[i*2]){ 
-          p_b2=1;
-          
-          if(pixels[jj*2]<ttt2)
-            ttt2=pixels[jj*2];
-          
-        }
-        if(diff(pixels[jj*2+1],pixels[i*2+1])>(float)sad/get_w()
-          &&diff(pixels[jj*2],pixels[i*2])<(float)sad2/get_w()&&i!=jj&&pixels[jj*2+1]>pixels[i*2+1]){
-            p_b3=1;
-        }
-        if(diff(pixels[jj*2+1],pixels[i*2+1])>(float)sad/get_w()
-          &&diff(pixels[jj*2],pixels[i*2])<(float)sad2/get_w()&&i!=jj&&pixels[jj*2+1]<pixels[i*2+1]){
-            p_b4=1;
-        }
-        
-      }
-    
-    if(!p_b3||!p_b4){
-        free(trline->at[trline->len].at);
-        
-        continue;
-    }
-		
-    
-    double cb = 1.0;
-    double sb = 1.0/get_w();
-    double ib = cb/get_w();
-    if(p_b)
-      for(double zz = pixels[i*2]; diff(zz,ttt)>ib&&zz>-1;zz-=(float)sb){ 
-        pixels = realloc(pixels,sizeof *pixels *((c_len+1)*3)); 
-        colors = realloc(colors,sizeof *colors *((c_len+1)*4));
-        trline->at[trline->len].at[trline->at[trline->len].len*2] = zz;
-        trline->at[trline->len].at[trline->at[trline->len].len*2+1] = pixels[i*2+1];
-        pixels[c_len*2] = zz;
-        pixels[c_len*2+1] = pixels[i*2+1]; 
-        colors[c_len*3] = 0.1f;
-        colors[c_len*3+1] = vvi==3?0.1f:vvi==4?0.5f:1.0f; 
-        colors[c_len*3+2] = 1.0f; 
-        c_len++;
-        trline->at[trline->len].len++;
-
-       
-      } 
-    if(p_b2)
-      for(double zz = pixels[i*2]; diff(zz,ttt2)>ib&&zz<1;zz+=(float)sb){
-      
-        pixels = realloc(pixels,sizeof *pixels *((c_len+1)*3));
-        colors = realloc(colors,sizeof *colors *((c_len+1)*4));
-        int brea = 0;
-        trline->at[trline->len].at[trline->at[trline->len].len*2] = zz;
-        trline->at[trline->len].at[trline->at[trline->len].len*2+1] = pixels[i*2+1];
-        pixels[c_len*2] = zz;
-        pixels[c_len*2+1] = pixels[i*2+1]; 
-        colors[c_len*3] = 0.1f;
-        colors[c_len*3+1] = vvi==3?0.1f:vvi==4?0.5f:1.0f; 
-        colors[c_len*3+2] = 1.0f; 
-        c_len++;
-        trline->at[trline->len].len++;
-       
-      }
-    
-    
-    trline->len++;
-    */
 		trline->len++;
 		}
   }
-
   if(trline->len>1){
   for(int ii = 0; ii!=trline->len-1; ii++){ 
     if(trline->at[ii].at[3]<trline->at[ii+1].at[3]){
@@ -454,8 +408,7 @@ glfl_ar* perspective_proj(GLFWwindow* b,point_arr* c,double ctx,double cty,doubl
       	min2_t = trline->at[zzi].at[zzi2*2+1];
       }
        
-    }
-    
+    } 
     free(trline->at[zzi].at);
 		if (trline->at[zzi].len == 0)
       continue; 
@@ -495,7 +448,7 @@ glfl_ar* perspective_proj(GLFWwindow* b,point_arr* c,double ctx,double cty,doubl
 		
 		for(;(ma_to_mi?x1>=x2:x1<=x2);(ma_to_mi?(x1-=ite1):(x1+=ite2))){	
 		
-		cord aaaa = poi_d(x1,y1,x2,y2,fc_len,pixels,0);	
+		cord aaaa = poi_d(x1,y1,x2,y2,fc_len,pixels,0,-1);	
     
 		if(aaaa.z!=-1){
 			/*pixels = realloc(pixels,sizeof *pixels *((c_len+1)*3)); 
@@ -523,11 +476,13 @@ glfl_ar* perspective_proj(GLFWwindow* b,point_arr* c,double ctx,double cty,doubl
 		double bb[] = {x1,x2};
     double bb2[] = {y1, y2};
     point_arr* asd = basier2d(bb,bb2,2,0.1,0.1,0.1);
-		
+		//printf("aa\n");
     for(int lli = 0; lli!=asd->len; lli++){
     	pixels = realloc(pixels,sizeof *pixels *((c_len+1)*4));
     	colors = realloc(colors,sizeof *colors *((c_len+1)*5)); 
-    	double dd = 10;
+    	trans = realloc(trans,sizeof *trans *((c_len+1)*2));
+			trans[c_len] = 0.5;
+			double dd = 10;
     	
     	pixels[c_len*2] = asd->c[lli].at.x;
     	pixels[c_len*2+1] = asd->c[lli].at.y; 
@@ -573,7 +528,7 @@ glfl_ar* perspective_proj(GLFWwindow* b,point_arr* c,double ctx,double cty,doubl
 	rea->col = colors;
 	rea->pix = pixels;
 	rea->len = c_len;
-
+	rea->trans = trans;
 	return rea; 
 }
 point_arr* basier3d(double*xx,double*yy,double*zz,int n,float rr, float gg, float bb){
@@ -642,18 +597,21 @@ void join_cords(point_arr* a, point_arr* b){
 }
 void join_glfl_a(glfl_ar* a, glfl_ar* b){ 
 	int a_len = a->len;
-  a->pix = realloc(a->pix,sizeof(*a->pix)*(a->len+b->len)*60);
-  a->col = realloc(a->col,sizeof(*a->col)*(a->len+b->len)*60);
-  
+  a->pix = realloc(a->pix,sizeof(*a->pix)*(a->len+b->len+1)*20);
+  a->col = realloc(a->col,sizeof(*a->col)*(a->len+b->len+1)*20);
+  a->trans = realloc(a->trans,sizeof(*a->trans)*(a->len+b->len+1)*20);
 	a->len+=b->len;
   
-  if(a->pix==NULL||a->col==NULL)
+  if(a->pix==NULL||a->col==NULL||a->trans==NULL)
     err("failed to reallocate float array",pexit);
   for(int i = 0; i<=b->len*2; i++){
     a->pix[a_len*2+i] = b->pix[i];  
   }
 	for(int i = 0; i<=b->len*3; i++){
     a->col[a_len*3+i] = b->col[i];  
+  }
+	for(int i = 0; i<=b->len; i++){
+    a->trans[a_len+i] = b->trans[i];  
   }
 }
 point_arr* polygon3d(double* vx, double*vy, double* vz, int n){
@@ -719,8 +677,7 @@ point_arr* square_gen(double* tl, double* tr, double* bl, double*br,float rr, fl
   
   join_cords(a,b);
   join_cords(a,c);
-  join_cords(a,d);
-  printf("done\n");
+  join_cords(a,d); 
 	free(b->c);
   free(b->vert);
   free(b);
@@ -818,7 +775,59 @@ point_arr* cube_gen(double* tl, double* tr, double* bl, double*br,
   free(f);
   return a;
 }
+point_m* rect3d_gen(double* tl, double* tr, double* bl, double*br,
+               double* tl2, double* tr2, double* bl2, double*br2,
+                    float rr, float gg, float bb){
+	point_m* mm = malloc(sizeof * mm * 8);
+	mm->len = 0;
+	{
+	double xx1[5]={tl[0],tr[0],br[0],bl[0]};
+	double yy1[5]={tl[1],tr[1],br[1],bl[1]};
+	double zz1[5]={tl[2],tr[2],br[2],bl[2]};
+	mm[mm->len].at = polygon3d(xx1,yy1,zz1,5);
+	mm->len++;
+	}
+	{
+	double xx1[5]={tl2[0],tr2[0],br2[0],bl2[0]};
+	double yy1[5]={tl2[1],tr2[1],br2[1],bl2[1]};
+	double zz1[5]={tl2[2],tr2[2],br2[2],bl2[2]};
+	mm[mm->len].at = polygon3d(xx1,yy1,zz1,5);
+	mm->len++;
+	}
+	
+	{
+	double xx1[5]={tl2[0],tr2[0],tr[0],tl[0]};
+	double yy1[5]={tl2[1],tr2[1],tr[1],tl[1]};
+	double zz1[5]={tl2[2],tr2[2],tr[2],tl[2]};
+	mm[mm->len].at = polygon3d(xx1,yy1,zz1,5);
+	mm->len++;
+	}
+	{
+	double xx1[5]={bl2[0],br2[0],br[0],bl[0]};
+	double yy1[5]={bl2[1],br2[1],br[1],bl[1]};
+	double zz1[5]={bl2[2],br2[2],br[2],bl[2]};
+	mm[mm->len].at = polygon3d(xx1,yy1,zz1,5);
+	mm->len++;
+	}
+
+	{
+	double xx1[5]={tl2[0],bl2[0],bl[0],tl[0]};
+	double yy1[5]={tl2[1],bl2[1],bl[1],tl[1]};
+	double zz1[5]={tl2[2],bl2[2],bl[2],tl[2]};
+	mm[mm->len].at = polygon3d(xx1,yy1,zz1,5);
+	mm->len++;
+	}
+	{
+	double xx1[5]={tr2[0],br2[0],br[0],tr[0]};
+	double yy1[5]={tr2[1],br2[1],br[1],tr[1]};
+	double zz1[5]={tr2[2],br2[2],br[2],tr[2]};
+	mm[mm->len].at = polygon3d(xx1,yy1,zz1,5);
+	mm->len++;
+	}
+	return mm;
+}
 int main(int argc,char*argv[]){
+	
   flag_handle(argc,argv);
   atexit(sig_handle);
   GLFWwindow* w = glfw_init();
@@ -835,59 +844,20 @@ int main(int argc,char*argv[]){
   logm("built shaders");
   
   
-  
-  double tl[3] = {5.0,200.0,400.0};
-  double tr[3] = {200.0,200.0,400.0};
+
+  double tl[3] = {5.0,200.0,200.0};
+  double tr[3] = {200.0,200.0,200.0};
   double bl[3] = {5.0,5.0,200.0};
   double br[3] = {200.0,5.0,200.0};
   
-  double tl2[3] = {5.0,200.0,200.0};
-  double tr2[3] = {200.0,200.0,200.0};
+  double tl2[3] = {5.0,200.0,5.0};
+  double tr2[3] = {200.0,200.0,5.0};
   double bl2[3] = {5.0,5.0,5.0};
   double br2[3] = {200.0,5.0,5.0};
-  float rr = 0.0;
+	float rr = 0.0;
 	float gg = 0.0;
 	float bb = 1.0;
-	//point_arr* a = cube_gen(tl1,tr1,bl1,br1,tl2,tr2,bl2,br2,0.1f,0.1f,1.0f);*/
-  /*double xx[8] = {0.0, 15.0, 50.0, 60.0,40.0,30.0, 0.0,0.0};
-  double yy[8] = {5.0, 15.0, 30.0, 45.0,64.0, 45.0,55.0,5.0};
-  double zz[8] = {50.0,50.0,50.0,50.0,50.0,50.0,50.0,50.0};
-  point_arr* a = polygon3d(xx,yy,zz,8);
-  
-  double xx2[8] = {0.0, 15.0, 50.0, 60.0,20.0,10.0, 0.0,0.0};
-  double yy2[8] = {5.0, 15.0, 30.0, 20.0,64.0, 45.0,55.0,5.0};
-  double zz2[8] = {50.0,50.0,50.0,50.0,50.0,50.0,50.0,50.0};
-  point_arr* a2 = polygon3d(xx2,yy2,zz2,8);
-  */
-	double xx1[5] = {5,50,50,5};
-	double yy1[5] = {5,5,50,50};
-	double zz1[5] = {5,5,5,5};
-	point_arr*a = polygon3d(xx1,yy1,zz1,5);
-	
-	double xx2[5] = {5,50,50,5};
-	double yy2[5] = {5,5,50,50};
-	double zz2[5] = {50,50,50,50};
-	point_arr*b = polygon3d(xx2,yy2,zz2,5);
-	
-	double xx3[5] = {5,5,5,5};
-	double yy3[5] = {5,5,50,50};
-	double zz3[5] = {50,5,5,50};
-	point_arr*c = polygon3d(xx3,yy3,zz3,5);
-	
-	double xx4[5] = {50,50,50,50};
-	double yy4[5] = {5,5,50,50};
-	double zz4[5] = {50,5,5,50};
-	point_arr*d = polygon3d(xx4,yy4,zz4,5);
-
-	double xx5[5] = {5,5,50,50};
-	double yy5[5] = {5,5,5,5};
-	double zz5[5] = {50,5,5,50};
-	point_arr*e = polygon3d(xx5,yy5,zz5,5);
-	
-	double xx6[5] = {5,5,50,50};
-	double yy6[5] = {50,50,50,50};
-	double zz6[5] = {50,5,5,50};
-	point_arr*f = polygon3d(xx6,yy6,zz6,5);
+	point_m* aaaa = rect3d_gen(tl,tr,bl,br,tl2,tr2,bl2,br2,rr,gg,bb);
 	
 	int max_r = 630;
   double half_max_r = (double)max_r/2/2;
@@ -917,8 +887,8 @@ int main(int argc,char*argv[]){
     double p4 = pl_y;
     double p5 = -pl_y+pl_z;
     double p6 = pl_x;
-    
-    glfl_ar* bba = perspective_proj(w,a,p1,p2,p3,p4,p5,p6);	
+    /*
+    glfl_ar* bba = perspective_proj(w,e,p1,p2,p3,p4,p5,p6);
 		glfl_ar* bbb = perspective_proj(w,b,p1,p2,p3,p4,p5,p6);	
 		glfl_ar* bbc = perspective_proj(w,c,p1,p2,p3,p4,p5,p6);	
 		glfl_ar* bbd = perspective_proj(w,d,p1,p2,p3,p4,p5,p6);
@@ -929,29 +899,35 @@ int main(int argc,char*argv[]){
 		join_glfl_a(bba,bbd);
 		join_glfl_a(bba,bbe);
 		join_glfl_a(bba,bbf);
-		render_p(bba);
-		
-		free(bbe->col);
-		free(bbe->pix);
-		free(bbe);
-		free(bbf->col);
-		free(bbf->pix);
-		free(bbf);
-		free(bbb->col);
-		free(bbb->pix);
-		free(bbb);
+		*/
 
-		free(bbd->col);
-		free(bbd->pix);
-		free(bbd);
-		free(bbc->col);
-		free(bbc->pix);
-		free(bbc);
+		if(aaaa->len>=0||1){
+		glfl_ar* bba = perspective_proj(w,aaaa[0].at,p1,p2,p3,p4,p5,p6);
+		for(int i = 1; i<=aaaa->len-1; i++){
+
+			glfl_ar* bbb = perspective_proj(w,aaaa[i].at,p1,p2,p3,p4,p5,p6);
+
+			join_glfl_a(bba,bbb);
+
+			free(bbb->col);
+			free(bbb->pix);
+			free(bbb->trans);
+			free(bbb);
+		}
+
+		render_p(bba);
+
+		free(bba->trans);
 
 		free(bba->col);
+
 		free(bba->pix);
-		free(bba); 
+
+		free(bba);
+		}
+
 		glfw_load(w);
+
     int mod_move=2;
     double run_mul=2;
     glfwPollEvents(); 
@@ -1023,16 +999,18 @@ int main(int argc,char*argv[]){
       pl_x+=cosf((half_max_r+plr_y)*0.01)*mul;
       pl_y+=sinf((half_max_r+plr_y)*0.01)*mul; 
     }
-    
+    if(glfwWindowShouldClose(w)||(glfwGetKey(w,GLFW_KEY_Q)))break; 
+		glfw_clear(w); 
+		if(1){
 		if(single_frame>0){
 	 		clock_gettime(CLOCK_REALTIME,&tem_t2);
 			double tt2_diff = (tem_t2.tv_sec - tem_t.tv_sec) * 1000.0 +
                     (tem_t2.tv_nsec - tem_t.tv_nsec) / 1000000.0; 
 			usleep(greater(single_frame - tt2_diff *1000,1));
 		}
-		glfw_clear(w); 
+		
     
-    if(glfwWindowShouldClose(w)||(glfwGetKey(w,GLFW_KEY_Q)))break; 
+    
     frames+=1;
 		clock_gettime(CLOCK_REALTIME, &end_t);
 		double tt_diff = (end_t.tv_sec - start_t.tv_sec) * 1000.0 +
@@ -1044,26 +1022,18 @@ int main(int argc,char*argv[]){
 			frames=0;
       clock_gettime(CLOCK_REALTIME,&start_t);
     }
-  }
+	}
+	}/*
   free(a->c);
   free(a->vert);
   free(a);
-  free(b->c);
-  free(b->vert);
-  free(b);
-	free(c->c);
-  free(c->vert);
-  free(c);
-	free(d->c);
-  free(d->vert);
-  free(d);
-	free(e->c);
-  free(e->vert);
-  free(e);
-	free(f->c);
-  free(f->vert);
-  free(f);
-
+  */
+	for(int i = 0; i!=aaaa->len; i++){
+		free(aaaa[i].at->c);
+		free(aaaa[i].at->vert);
+		free(aaaa[i].at);
+	}
+	free(aaaa);
 	glfwDestroyWindow(w);
   win_clean();
   glDeleteShader(vid);

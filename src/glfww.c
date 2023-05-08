@@ -48,7 +48,9 @@ int get_w(){
 int get_h(){
   return h;
 }
+
 #define glfw_load(w) glfwSwapBuffers(w);
+
 void glfw_loop(GLFWwindow*window){
   while(!glfwWindowShouldClose(window)){
     

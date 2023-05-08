@@ -22,10 +22,11 @@ static const double NaN = 0.0f/0.0f;
 #define info(s) info_m(s,__FILE__,__LINE__);
 #define logm(s) log_m(s,__FILE__,__LINE__);
 #else 
-#define err(s,f,...);
-#define warn(s);
-#define info(s);
-#define logm(s);
+#define printf(...){};
+#define err(s,f,...){};
+#define warn(s){};
+#define info(s){};
+#define logm(s){};
 #endif 
 
 double binomial(int n, int k);
