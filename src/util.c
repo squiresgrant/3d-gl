@@ -3,8 +3,16 @@
 #include "util.h"
 #include <math.h>
 #include "strings.h"
-double allocs = 0;
+ulong allocs = 0;
 int forced_length = 15;
+typedef struct {
+	void* addr;
+	char* file;
+	char* function;
+	int line;
+	ulong size;
+} alloc;
+alloc* allocations = NULL;
 double binomial(int n, int k){
   if(n==k)
     return 1.0;
@@ -14,10 +22,29 @@ double binomial(int n, int k){
   } 
   return v;
 }
-void mmalloc(){
-  allocs++; 
+void* mmalloc(ulong X,char*file,int line,char*func){
+	if(allocations==NULL){
+		allocations=(malloc)(sizeof(*allocations)*2);
+	}
+	allocations=(realloc)(allocations,sizeof(*allocations)*(allocs+1));
+	void* mal = (malloc)(X);
+	allocations[allocs].addr = mal;
+	allocations[allocs].function = func;
+	allocations[allocs].file = file;
+	allocations[allocs].line = line;
+	allocations[allocs].size = X;
+	allocs++;
+	return mal;
 }
-void ffree(){
+
+void ffree(void* X,char*file,int line,char*func){
+	for(ulong i = 0; i<=allocs; i++){
+		if(allocations[i].addr==X){
+			allocations[i].addr = NULL;
+			break;
+		}
+	}
+	(free)(X);
   allocs--;
 }
 int log_level = 0;
@@ -27,15 +54,36 @@ void pexit(int s){
   exit(s);
 }
 void sig_handle(void){
-	#ifdef stfu 
+	if(log_level<=-1){
+		#ifndef skip_memory_trace 
+		(free)(allocations);
+		#endif
+		return;
+	}
+	
+	#ifdef stfu
+	#ifndef skip_memory_trace 
+	(free)(allocations);
+	#endif
 	return;
 	#endif
-	if(log_level<=-1) return;
+
 	#ifndef skip_memory_trace
   if(allocs>0){
     char ssa[45];
     sprintf(ssa,"%s | (found %i)","uneven allocations, memory leak(s)",(int)nearbyint(allocs));
     warn(ssa);
+		for(ulong i = 0; i<=allocs; i++){
+			if(allocations[i].addr!=NULL){
+				
+				char ad[50];
+				sprintf(ad,"%p",allocations[i].addr);
+				ad[0]='\20';
+				ad[1]='\20';
+				printf("   | - <\x1b[90m0x\x1b[0m%s> %s:%s:%i, %lu bytes initially allocated\n",ad,allocations[i].file,allocations[i].function,allocations[i].line,allocations[i].size);
+			}
+		}
+		(free)(allocations);
   }
   if(allocs==0)
     info("even allocations, no internal leaks");

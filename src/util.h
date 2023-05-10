@@ -12,8 +12,8 @@ static const double NaN = 0.0f/0.0f;
 #define diff(a,b) ((a)>(b)?(a)-(b):(b)-(a))
 
 #ifndef skip_memory_trace
-#define malloc(X) malloc(X); mmalloc();
-#define free(X) free(X); ffree();
+#define malloc(X) mmalloc(X,(char*)__FILE__,(int)__LINE__,(char*)__FUNCTION__);
+#define free(X) ffree(X,(char*)__FILE__,(int)__LINE__,(char*)__FUNCTION__);
 #endif
 
 #ifndef stfu
@@ -30,8 +30,8 @@ static const double NaN = 0.0f/0.0f;
 #endif 
 
 double binomial(int n, int k);
-void mmalloc();
-void ffree();
+void* mmalloc(ulong,char*,int,char*);
+void ffree(void*,char*,int,char*);
 void err_m(char*,void (*)(int),char*,int);
 void warn_m(char*,char*,int ,...);
 void info_m(char*,char*,int ,...);

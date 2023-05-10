@@ -13,52 +13,59 @@ typedef struct {
   double z;
   int vertex;
 } cord;
+int point_on_line(double x,double y,double lx1,double ly1, double lx2,double ly2){
+	double crossproduct = (y-ly1)*(lx2-lx1) - (x-lx1)*(ly2-ly1);
+	if(fabs(crossproduct)>FL_DIS)
+		return 0;
+
+	double dotproduct = (x-lx1)*(lx2-lx1) + (y-ly1)*(ly2-ly1);
+	if(dotproduct < 0)
+		return 0;
+
+	double squaredlength = (lx2-lx1)*(lx2-lx1) + (ly2-ly1)*(ly2-ly1);
+	if(dotproduct > squaredlength)
+		return 0;
+	return 1;
+}
 cord poi_d(double x1,double y1,double x2, double y2,int len,GLfloat* pixels,int shortest,int ign){
-	double m1 = (y2-y1)/(x2-x1);	
-	double b1 = y1 - m1 * x1;
-	if(x2-x1==0){
-		m1=0;
-		b1=0;	
-	}
+	
 	cord aa;
 	aa.x = 0;
 	aa.y = 0;
 	aa.z = -1;
-		
+	
 	for(int yyu = 0; yyu!=len-1; yyu++){ 
-    //if(yyu==ign||yyu-1==ign||yyu+1==ign)continue;
+    //if(yyu==ign)continue;
   	double x3 = pixels[yyu*2];
     double x4 = pixels[(yyu+1)*2];
     double y3 = pixels[yyu*2+1];
     double y4 = pixels[(yyu+1)*2+1];
-    double m2 = (y4-y3)/(x4-x3);
-  	
-    double b2 = y3 - m2 * x3;
+
+		//formulas from https://en.wikipedia.org/wiki/Intersection_(geometry)
+		double t = ((y3-y1)*(x2-x1)-(y2-y1)*x3+(y2-y1)*x1)/
+								((y2-y1)*(x4-x3)-(y4-y3)*(x2-x1));
+		double s = (x3-x1+t*(x4-x3))/(x2-x1);
+		double nsx = x1 + s*(x2-x1);
+		double nsy = y1 + s*(y2-y1);
 		
-		
-    double nsx = (b2-b1)/(m1-m2);
-    double nsy = m1*nsx+b1;
-		if (x4-x3==0){
-			nsx=x3;
-			nsy=m1*nsx+b1;
+		double nsx2 = x3 + t*(x4-x3);
+		double nsy2 = y3 + t*(y4-y3);
+
+		if(isnan(nsx)||isnan(nsy)||!(0<=s&&1>=s&&0<=t&&1>=t))
+			continue;
+		//printf("%f %f, %f %f | (%f,%f),(%f,%f)\n",nsx,nsy,nsx2,nsy2,x1,y1,x2,y2);		
+		if(!(nsx>=lesser(x1,x2)&&nsx<=greater(x2,x1)&&nsy>=lesser(y1,y2)&&nsy<=greater(y2,y1))||(diff(nsx,x1)<FL_DIS&&diff(nsy,y1)<FL_DIS))
+			continue;
+		//printf("aaa\n");
+
+		if(aa.z==-1||pow(nsx-x1,2)+pow(nsy-y1,2)<pow(aa.x-x1,2)+pow(aa.y-y1,2)){
+			aa.x = nsx;
+			aa.y = nsy;
 		}
-		if(!(nsx >= greater(lesser(x1, x2), lesser(x3, x4)) && nsx <= lesser(greater(x1, x2), greater(x3, x4)))
-    	||!(nsy >= greater(lesser(y1, y2), lesser(y3, y4)) && nsy <= lesser(greater(y1, y2), greater(y3, y4))))
-				continue;
-
-		if((diff(nsx,x2)<FL_DIS&&diff(nsy,y2)<FL_DIS)
-			||(diff(nsx,x1)<FL_DIS&&diff(nsy,y1)<FL_DIS))
-				continue;
-
-			if(aa.z==-1||pow(x1-nsx,2)+pow(y1-nsy,2)<pow(x1-aa.x,2)+pow(y1-aa.y,2)){	
-				aa.x = nsx;
-				aa.y = nsy;
-				
-			}
-			aa.z++;		
-			if(!shortest)
-				break; 
-  }
+		aa.z++;
+		if(!shortest)
+			break;
+	}
 	return aa;
 }
 
@@ -107,9 +114,9 @@ static const char* fshader_src =
   "#version 330\n"
   "in vec3 ncolor;\n"
   "in float ntrans;\n"
-	"out vec3 color;\n"
+	"out vec4 color;\n"
   "void main(){\n"
-  "gl_FragColor = vec4(ncolor[0],ncolor[1],ncolor[2],0.2);\n"
+  "gl_FragColor = vec4(1.0,0.0,1.0,1.0);\n"
   "};";
 
 point_arr* basier2d(double*xx,double*yy,int n,float rr, float gg, float bb){ 
@@ -165,13 +172,18 @@ typedef struct {
 	GLfloat* col;
 	GLfloat* trans;
 	int len;
+	GLfloat* tri;
+	int tlen;
 } glfl_ar;
 void render_p(glfl_ar* bba){
 	//glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC1_ALPHA);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+	
 	GLuint verta;
   glGenVertexArrays(1,&verta);
   glBindVertexArray(verta);
-
+/*	
   GLuint vetb;
   glGenBuffers(1,&vetb);
   glBindBuffer(GL_ARRAY_BUFFER,vetb);
@@ -180,8 +192,17 @@ void render_p(glfl_ar* bba){
   glEnableVertexAttribArray(0);
   glBindBuffer(GL_ARRAY_BUFFER,vetb);
   glVertexAttribPointer(0,2,GL_FLOAT,GL_FALSE,0,(void*)0);
+ */ 
+  GLuint vetb;
+  glGenBuffers(1,&vetb);
+  glBindBuffer(GL_ARRAY_BUFFER,vetb);
+  glBufferData(GL_ARRAY_BUFFER,sizeof(*bba->tri)*(bba->tlen*12),bba->tri,GL_STATIC_DRAW);
   
-  GLuint colb;
+  glEnableVertexAttribArray(0);
+  glBindBuffer(GL_ARRAY_BUFFER,vetb);
+  glVertexAttribPointer(0,2,GL_FLOAT,GL_FALSE,0,(void*)0);
+
+	GLuint colb;
   glGenBuffers(1,&colb);
   glBindBuffer(GL_ARRAY_BUFFER,colb);
   glBufferData(GL_ARRAY_BUFFER,sizeof(*bba->col)*(bba->len*4),bba->col,GL_STATIC_DRAW);
@@ -199,7 +220,7 @@ void render_p(glfl_ar* bba){
   glBindBuffer(GL_ARRAY_BUFFER,trab);
   glVertexAttribPointer(2,1,GL_FLOAT,GL_FALSE,0,(void*)0);
 
-	glDrawArrays(GL_POINTS,0,bba->len);
+	glDrawArrays(GL_TRIANGLES,0,bba->tlen*6);
   glDeleteBuffers(1,&trab);
 	glDeleteBuffers(1,&vetb);
   glDeleteBuffers(1,&colb);
@@ -208,7 +229,7 @@ glfl_ar* perspective_proj(GLFWwindow* b,point_arr* c,double ctx,double cty,doubl
 
 	GLfloat* pixels = malloc(sizeof(*pixels)*((1+c->len)*3));
   GLfloat* colors = malloc(sizeof(*colors)*((1+c->len)*4));
-  GLfloat* trans = malloc(sizeof(*trans)*((1+c->len)*2));
+  GLfloat* trans 	= malloc(sizeof(*trans)*((1+c->len)*2));
 	if(pixels==NULL||colors==NULL||trans==NULL)
     err("failed to allocate perspective array:(",pexit);
 
@@ -241,7 +262,7 @@ glfl_ar* perspective_proj(GLFWwindow* b,point_arr* c,double ctx,double cty,doubl
    
     double bx = ez/dz*dx+dx;
     double by = ez/dz*dy+dy; 
-    if(dz>-1){
+    if(dz>=0){
       ab_to_vp(xa,ya,get_w(),get_h(),bx,by);
       pixels[c_len*2] = xa+1;
       pixels[c_len*2+1] = ya;
@@ -252,11 +273,14 @@ glfl_ar* perspective_proj(GLFWwindow* b,point_arr* c,double ctx,double cty,doubl
 			c_len++;
     }
   }
-
-  double fc_len = c_len;
-  for(int i = 0; i<=fc_len-1; i++){
-
-		if(isinf(pixels[i*2]))
+	
+	printf("---\n");	
+  int fc_len = c_len;
+  /*
+	for(int i = 0; 0&&i<=fc_len-1; i++){
+		//printf("%f %f | %f %f\n",pixels[i*2],pixels[i*2+1],pixels[(i+1)*2],pixels[(i+1)*2+1]);
+		if(isinf(pixels[i*2])||isinf(pixels[i*2+1])||
+				isinf(pixels[(i+1)*2])||isinf(pixels[(i+1)*2+1]))
 			continue;
     double x22[3] = {pixels[i*2],pixels[(i+1)*2]};
     double y22[3] = {pixels[i*2+1],pixels[(i+1)*2+1]};
@@ -284,40 +308,45 @@ glfl_ar* perspective_proj(GLFWwindow* b,point_arr* c,double ctx,double cty,doubl
     free(bas->vert);
     free(bas);
   }
-  
-	double dclen = c_len;
+  */
+	//double dclen = c_len;
   int vvi = 0;
-  //printf("---\n");
-  glfl_m* trline = malloc(sizeof(*trline)*get_w()*30);
+	
+  glfl_m* trline = malloc(sizeof(*trline)*get_w()*60);
   trline->len = 0;
-  trline->at = malloc(sizeof(*trline->at)*get_w()*40);
+  trline->at = malloc(sizeof(*trline->at)*get_w()*80);
   if(trline==NULL||trline->at==NULL)
 		pexit(54);
-	for(int i = 0; i<=fc_len; i++){
+	for(int i = 0; i<=fc_len-1; i++){
     if(c->c[i].at.vertex==1||1){ 
       if(pixels==NULL||colors==NULL)
         pexit(55);
       if(isinf(pixels[i*2]))
 				continue;
-			
+			//printf("%f %f\n",pixels[i*2],pixels[i*2+1]);
 			vvi++;
       
-      trline->at[trline->len].at = malloc(sizeof(*trline->at[trline->len].at)*(c_len+get_w()*2)*30);
+      
+			//printf(" // %f %f\n",pixels[i*2],pixels[i*2+1]);
+			int le = 2222;
+			int lentt = fc_len;
+			cord aaa = poi_d(pixels[i*2],pixels[i*2+1],le,pixels[i*2+1],lentt,pixels,1,i);
+			cord aab = poi_d(pixels[i*2],pixels[i*2+1],-le,pixels[i*2+1],lentt,pixels,1,i);
+			cord aac = poi_d(pixels[i*2],pixels[i*2+1],pixels[i*2],-le,lentt,pixels,1,i);
+			cord aad = poi_d(pixels[i*2],pixels[i*2+1],pixels[i*2],le,lentt,pixels,1,i);
+			trline->at[trline->len].at = malloc(sizeof(*trline->at[trline->len].at)*((1+c_len+get_w())*20)*60);
       trline->at[trline->len].len = 0;
 			//printf("%f\n",dclen);
-			int le = 2222;
-			cord aaa = poi_d(pixels[i*2],pixels[i*2+1],le,pixels[i*2+1],c->len*2,pixels,1,i);
-			cord aab = poi_d(pixels[i*2],pixels[i*2+1],-le,pixels[i*2+1],c->len*2,pixels,1,i);
-			cord aac = poi_d(pixels[i*2],pixels[i*2+1],pixels[i*2],-le,c->len*2,pixels,1,i);
-			cord aad = poi_d(pixels[i*2],pixels[i*2+1],pixels[i*2],le,c->len*2,pixels,1,i);
-
+			if(trline->at[trline->len].at==NULL)
+				abort();
 			/*if(aac.z||aad.z==-1){
 				free(trline->at[trline->len].at);
         continue;
-			}*/
-			//printf("%f %f %f %f\n",aaa.z,aab.z,aac.z,aad.z);
+			}*/	
+			//printf("%.1f %.1f %.1f %.1f | %f %f, %f %f\n",aaa.z,aab.z,aac.z,aad.z,aaa.x,aaa.y,aab.x,aab.y);
 			if(fmod(aaa.z,2)==1||fmod(aab.z,2)==1||
 					fmod(aac.z,2)==1||fmod(aad.z,2)==1){
+				//printf("%f %f %f %f\n",aaa.z,aab.z,aac.z,aad.z);
 				free(trline->at[trline->len].at);
 				continue;
 			}	
@@ -330,24 +359,27 @@ glfl_ar* perspective_proj(GLFWwindow* b,point_arr* c,double ctx,double cty,doubl
 			for(int cci = 0; cci<=frl->len; cci++){
 				trline->at[trline->len].at[trline->at[trline->len].len*2] = frl->c[cci].at.x;
         trline->at[trline->len].at[trline->at[trline->len].len*2+1] = frl->c[cci].at.y;
+				//printf("aab %f %f\n",frl->c[cci].at.x,frl->c[cci].at.y);
 				pixels = realloc(pixels,sizeof *pixels *((c_len+1)*3)); 
       	colors = realloc(colors,sizeof *colors *((c_len+1)*4));
 				trans = realloc(trans,sizeof *trans *((c_len+1)*2));
 				if(trans==NULL||pixels==NULL||colors==NULL)
         	pexit(55);
-				trans[c_len] = 0.5;
+				trans[c_len] = 0.0;
 				pixels[c_len*2] = frl->c[cci].at.x;
       	pixels[c_len*2+1] = frl->c[cci].at.y; 
       	colors[c_len*3] = 1.0f;
       	colors[c_len*3+1] = 0.3f; 
       	colors[c_len*3+2] = 1.0f; 
       	c_len++;
+				
 				//trline->len++;	
 				trline->at[trline->len].len++;	
 			}
 			free(frl->c);
 			free(frl->vert);
-			free(frl);}
+			free(frl);
+			}
 			if(aaa.z!=-1)
 			{double aax[] = {pixels[i*2],aaa.x};
 			double aay[] = {pixels[i*2+1],aaa.y};
@@ -358,28 +390,54 @@ glfl_ar* perspective_proj(GLFWwindow* b,point_arr* c,double ctx,double cty,doubl
 			for(int cci = 0; cci<=frl->len; cci++){
 				trline->at[trline->len].at[trline->at[trline->len].len*2] = frl->c[cci].at.x;
         trline->at[trline->len].at[trline->at[trline->len].len*2+1] = frl->c[cci].at.y;
+				//printf("aab %f %f\n",frl->c[cci].at.x,frl->c[cci].at.y);
 				pixels = realloc(pixels,sizeof *pixels *((c_len+1)*3)); 
       	colors = realloc(colors,sizeof *colors *((c_len+1)*4));
 				trans = realloc(trans,sizeof *trans *((c_len+1)*2));
 				
-				trans[c_len] = 0.5;
+				trans[c_len] = 0.0;
 				pixels[c_len*2] = frl->c[cci].at.x;
       	pixels[c_len*2+1] = frl->c[cci].at.y; 
       	colors[c_len*3] = 1.0f;
       	colors[c_len*3+1] = 0.3f; 
       	colors[c_len*3+2] = 1.0f; 
       	c_len++;
+				
 				trline->at[trline->len].len++;
 			}
 			free(frl->c);
 			free(frl->vert);
-			free(frl);}
+			free(frl);
+			}
+			if(aaa.z==-1&&aab.z==-1){
+				double fx = pixels[i*2];
+				double fy = pixels[i*2+1];
+				trline->at[trline->len].at[trline->at[trline->len].len*2] = fx;
+        trline->at[trline->len].at[trline->at[trline->len].len*2+1] = fy;
+				//printf("aa\n");
+				
+				pixels = realloc(pixels,sizeof *pixels *((c_len+1)*3)); 
+      	colors = realloc(colors,sizeof *colors *((c_len+1)*4));
+				trans = realloc(trans,sizeof *trans *((c_len+1)*2));
+				if(trans==NULL||pixels==NULL||colors==NULL)
+        	pexit(55);
+				trans[c_len] = 0.0;
+				pixels[c_len*2] = fx;
+      	pixels[c_len*2+1] = fy; 
+      	colors[c_len*3] = 1.0f;
+      	colors[c_len*3+1] = 0.3f; 
+      	colors[c_len*3+2] = 1.0f; 
+      	c_len++;
+				
+				trline->at[trline->len].len++;	
+			}
 		trline->len++;
 		}
   }
+	
   if(trline->len>1){
-  for(int ii = 0; ii!=trline->len-1; ii++){ 
-    if(trline->at[ii].at[3]<trline->at[ii+1].at[3]){
+  for(int ii = 0; ii<trline->len-1; ii++){ 
+    if(trline->at[ii].at[1]<trline->at[ii+1].at[1]){
       glfl_a temp = trline->at[ii];
       trline->at[ii] = trline->at[ii+1];
       trline->at[ii+1] = temp;
@@ -387,18 +445,25 @@ glfl_ar* perspective_proj(GLFWwindow* b,point_arr* c,double ctx,double cty,doubl
     }
       
   }}
-  double ffclen = c_len;
 
-  double lmax_t = -2.0;
-  double lmin_t = 2.0;
-  double lmax2_t = -2.0;
-  double lmin2_t = 2.0;
-  for(int zzi = 0; zzi!=trline->len; zzi++){
-    double max_t = -2.0;
-    double min_t = 2.0;
-    double max2_t = -2.0;
-    double min2_t = 2.0;
-    for(int zzi2 = 0; zzi2!=trline->at[zzi].len;zzi2++){
+	/*for(int ii = 0; ii<trline->len-1; ii++){ 
+    printf("%i : %f %f\n",ii,trline->at[ii].at[0],trline->at[ii].at[1]);
+      
+  }*/
+	//printf("%i\n",trline->len);
+  GLfloat* tria = malloc(sizeof(*tria)*fc_len*2*6);
+	int tric = 0;
+	//double ffclen = c_len;
+  double lmax_t = -2222.0;
+  double lmin_t = 2222.0;
+  double lmax2_t = -2222.0;
+  double lmin2_t = 2222.0;
+  for(int zzi = 0; zzi<trline->len; zzi++){
+    double max_t = -2222.0;
+    double min_t = 2222.0;
+    double max2_t = -2222.0;
+    double min2_t = 2222.0;
+    for(int zzi2 = 0; zzi2<trline->at[zzi].len;zzi2++){
       if(max_t<trline->at[zzi].at[zzi2*2]){
       	max_t = trline->at[zzi].at[zzi2*2];
       	max2_t = trline->at[zzi].at[zzi2*2+1];
@@ -410,78 +475,85 @@ glfl_ar* perspective_proj(GLFWwindow* b,point_arr* c,double ctx,double cty,doubl
        
     } 
     free(trline->at[zzi].at);
+		
 		if (trline->at[zzi].len == 0)
       continue; 
-    if(lmax2_t!=max2_t&&lmin_t!=2.0&&lmax_t!=-2.0){
-
+		
+    if(lmax2_t!=max2_t&&lmin_t!=2222.0&&lmax_t!=-2222.0){
+		
     float color = (float)zzi/trline->len;
     float color2 = 1.0f-((float)zzi/trline->len);
     double di = pow(lmin_t-max_t,2)+pow(lmin2_t-max2_t,2);//sqrt should be used here
     double di2 = pow(lmax_t-min_t,2)+pow(lmax2_t-min2_t,2);
-    double ux1, uy1, ux2, uy2;
+    double ux1, uy1, ux2, uy2, ix1, iy1, ix2, iy2;
     int ma_to_mi = 0;
-		if (di > di2) {
+		if (di >= di2) {
     	ux1 = max_t;
     	uy1 = max2_t;
     	ux2 = lmin_t;
     	uy2 = lmin2_t;
+			
+			ix1 = min_t;
+    	iy1 = min2_t;
+    	ix2 = lmax_t;
+    	iy2 = lmax2_t;
 			ma_to_mi=1;
     } else {
     	ux1 = min_t;
     	uy1 = min2_t;
     	ux2 = lmax_t;
     	uy2 = lmax2_t;
-    }
-		
+   		
+			ix1 = max_t;
+    	iy1 = max2_t;
+    	ix2 = lmin_t;
+    	iy2 = lmin2_t;
 
+		}
+	
+		//printf("%i %f,%f %f,%f\n",trline->at[zzi].len,ux1,uy1,ux2,uy2);
     color2 = 1.0f;
     
-		double x1 = ma_to_mi?max_t:min_t;
-    double x2 = ma_to_mi?lmin_t:lmax_t;
-		double ite = ((float)get_w()/4);
-	
-		double ite1 = fabs(max_t/ite);
-		double ite2 = fabs(lmax_t/ite);
-	
+		double x1 = ux1;//ma_to_mi?max_t:min_t;
+    double x2 = ux2;//ma_to_mi?lmin_t:lmax_t;
+		
+		//double itx = get_w();
+		//double ity = get_w();
 		double y1 = uy1;
-    double y2 = uy2; 	
-		
-		for(;(ma_to_mi?x1>=x2:x1<=x2);(ma_to_mi?(x1-=ite1):(x1+=ite2))){	
-		
-		cord aaaa = poi_d(x1,y1,x2,y2,fc_len,pixels,0,-1);	
-    
-		if(aaaa.z!=-1){
-			/*pixels = realloc(pixels,sizeof *pixels *((c_len+1)*3)); 
-      colors = realloc(colors,sizeof *colors *((c_len+1)*4));
-      //printf("%f %f\n",aaa.x,aaa.y);
-			pixels[c_len*2] = x1;
-      pixels[c_len*2+1] = y1; 
-      colors[c_len*3] = 1.0f;
-      colors[c_len*3+1] = 0.3f; 
-      colors[c_len*3+2] = 1.0f; 
-      c_len++;
+    double y2 = uy2;
+
+		//double chx = (x2-x1)/itx;
+		//double chy = (y2-y1)/ity;
+		int it = 0;
+		//printf("%f->%f by %f\n%f->%f by %f\n",x1,x2,chx,y1,y2,chy);
+		double xx1[] = {x1,x2};
+		double yy1[] = {y1,y2};
+
+		point_arr* aacc = basier2d(xx1,yy1,2,0.0,0.1,0.1);
+		for(int paaa = 0; paaa<=aacc->len; paaa++){
+			cord aaaa;
+			aaaa = poi_d(x1,y1,aacc->c[paaa].at.x,aacc->c[paaa].at.y,fc_len,pixels,0,-1);
+			//x1+=chx;
+			//y1+=chy;
 			
-			pixels = realloc(pixels,sizeof *pixels *((c_len+1)*3)); 
-      colors = realloc(colors,sizeof *colors *((c_len+1)*4));
-      //printf("%f %f\n",aaa.x,aaa.y);
-			pixels[c_len*2] = aaaa.x;
-      pixels[c_len*2+1] = aaaa.y; 
-      colors[c_len*3] = 1.0f;
-      colors[c_len*3+1] = 0.0f; 
-      colors[c_len*3+2] = 0.0f;
-			c_len++;*/
-			//printf("%f %f\n",aaaa.x,aaaa.y);
-			continue;
-		}
-		double bb[] = {x1,x2};
-    double bb2[] = {y1, y2};
-    point_arr* asd = basier2d(bb,bb2,2,0.1,0.1,0.1);
-		//printf("aa\n");
-    for(int lli = 0; lli!=asd->len; lli++){
+			if(trline->at[zzi].len<it)
+				break;
+			it++;
+			//printf("%i\n",it);
+			if(aaaa.z!=-1){	
+				continue;
+			}
+			/*
+			double bb[] = {x2,aacc->c[paaa].at.x};
+    	double bb2[] = {y2, aacc->c[paaa].at.y};
+			//printf("%f,%f -> %f,%f\n",bb[0],bb2[0],bb[1],bb2[1]);
+    	point_arr* asd = basier2d(bb,bb2,2,0.1,0.1,0.1);
+			//printf("aa\n");
+    	for(int lli = 0; lli!=asd->len; lli++){
     	pixels = realloc(pixels,sizeof *pixels *((c_len+1)*4));
     	colors = realloc(colors,sizeof *colors *((c_len+1)*5)); 
     	trans = realloc(trans,sizeof *trans *((c_len+1)*2));
-			trans[c_len] = 0.5;
+			trans[c_len] = 1.0;
 			double dd = 10;
     	
     	pixels[c_len*2] = asd->c[lli].at.x;
@@ -494,8 +566,113 @@ glfl_ar* perspective_proj(GLFWwindow* b,point_arr* c,double ctx,double cty,doubl
     free(asd->c);
     free(asd->vert);
     free(asd);
+		*/
+			tria[tric*6] = x2;
+			tria[tric*6+1] = y2;
+			tria[tric*6+2] = aacc->c[paaa].at.x;
+			tria[tric*6+3] = aacc->c[paaa].at.y;
+			tria[tric*6+4] = ix2;
+			tria[tric*6+5] = iy2;
+			tric++;
+		
+		//printf("%f %f, %f %f, %f %f, %f %f\n",x1,y1,x2,y2,ix1,iy1,ix2,iy2);
+			tria[tric*6] = x2;
+			tria[tric*6+1] = y2;
+			tria[tric*6+2] = aacc->c[paaa].at.x;
+			tria[tric*6+3] = aacc->c[paaa].at.y;
+			tria[tric*6+4] = ix1;
+			tria[tric*6+5] = iy1;
+			tric++;
+			
+			break;
+		}
+		free(aacc->c);
+		free(aacc->vert);
+		free(aacc);
+		/*
+		double ite = ((float)get_w());
+	
+		double ite1 = fabs(ix1/ite);
+		double ite2 = fabs(ix2/ite);
+	
+		//printf("%f %f\n",x1,x2);
+		for(;(ma_to_mi?x1>=x2:x1<=x2);(ma_to_mi?(x1-=ite1):(x1+=ite2))){	
+		cord aaaa = poi_d(x1,y1,x2,y2,fc_len,pixels,0,-1);	
+    //printf("%f %f\n",ite1,ite2);
+		it++;
+		if(it>=trline->at[zzi].len)
+			break;
+		printf(" **    %i %i | %i\n",it,trline->at[zzi].len,zzi);	
+		if(aaaa.z!=-1){
+			pixels = realloc(pixels,sizeof *pixels *((c_len+1)*3)); 
+      colors = realloc(colors,sizeof *colors *((c_len+1)*4));
+      //printf("%f %f\n",aaa.x,aaa.y);
+			pixels[c_len*2] = x1;
+      pixels[c_len*2+1] = y1; 
+      colors[c_len*3] = 1.0f;
+      colors[c_len*3+1] = 1.0f; 
+      colors[c_len*3+2] = 1.0f; 
+      c_len++;
+			
+			pixels = realloc(pixels,sizeof *pixels *((c_len+1)*3)); 
+      colors = realloc(colors,sizeof *colors *((c_len+1)*4));
+      //printf("%f %f\n",aaa.x,aaa.y);
+			pixels[c_len*2] = aaaa.x;
+      pixels[c_len*2+1] = aaaa.y; 
+      colors[c_len*3] = 1.0f;
+      colors[c_len*3+1] = 1.0f; 
+      colors[c_len*3+2] = 1.0f;
+			c_len++;
+			//printf("fail\n");
+			//printf("%f %f\n",aaaa.x,aaaa.y);
+			if(ma_to_mi&&ite1==0||!ma_to_mi&&ite2==0)
+				break;
+			continue;
+		}
+		
+		double bb[] = {x1,x2};
+    double bb2[] = {y1, y2};
+		
+    point_arr* asd = basier2d(bb,bb2,2,0.1,0.1,0.1);
+		//printf("aa\n");
+    for(int lli = 0; lli!=asd->len; lli++){
+    	pixels = realloc(pixels,sizeof *pixels *((c_len+1)*4));
+    	colors = realloc(colors,sizeof *colors *((c_len+1)*5)); 
+    	trans = realloc(trans,sizeof *trans *((c_len+1)*2));
+			trans[c_len] = 1.0;
+			double dd = 10;
+    	
+    	pixels[c_len*2] = asd->c[lli].at.x;
+    	pixels[c_len*2+1] = asd->c[lli].at.y; 
+    	colors[c_len*3] = color2;
+    	colors[c_len*3+1] = color;//vvi==3?0.1f:vvi==4?0.5f:1.0f; 
+    	colors[c_len*3+2] = 0.0f; 
+    	c_len++;
+    }
+    free(asd->c);
+    free(asd->vert);
+    free(asd);
+		
+		tria[tric*6] = x1;
+		tria[tric*6+1] = y1;
+		tria[tric*6+2] = x2;
+		tria[tric*6+3] = y2;
+		tria[tric*6+4] = ix2;
+		tria[tric*6+5] = iy2;
+		tric++;
+		
+		//printf("%f %f, %f %f, %f %f, %f %f\n",x1,y1,x2,y2,ix1,iy1,ix2,iy2);
+		tria[tric*6] = x1;
+		tria[tric*6+1] = y1;
+		tria[tric*6+2] = x2;
+		tria[tric*6+3] = y2;
+		tria[tric*6+4] = ix1;
+		tria[tric*6+5] = iy1;
+		tric++;
+
 		break;
-		}/*
+		}
+		*//*
 		pixels = realloc(pixels,sizeof *pixels *((c_len+1)*3)); 
       colors = realloc(colors,sizeof *colors *((c_len+1)*4));
       //printf("%f %f\n",aaa.x,aaa.y);
@@ -523,8 +700,13 @@ glfl_ar* perspective_proj(GLFWwindow* b,point_arr* c,double ctx,double cty,doubl
   free(trline->at);
   free(trline);
   glPointSize(4.0f);
-   
   glfl_ar* rea = malloc(sizeof(*rea));
+	rea->tlen = tric;
+	rea->tri = tria;
+	printf("  %i\n",tric);
+	for(int i = 0; i!=tric; i++){
+		printf("%f %f %f | %f %f %f\n",tria[i*6],tria[i*6+1],tria[i*6+2],tria[i*6+3],tria[i*6+4],tria[i*6+5]);
+	}
 	rea->col = colors;
 	rea->pix = pixels;
 	rea->len = c_len;
@@ -597,12 +779,14 @@ void join_cords(point_arr* a, point_arr* b){
 }
 void join_glfl_a(glfl_ar* a, glfl_ar* b){ 
 	int a_len = a->len;
-  a->pix = realloc(a->pix,sizeof(*a->pix)*(a->len+b->len+1)*20);
+  int a_tlen = a->tlen;
+	a->pix = realloc(a->pix,sizeof(*a->pix)*(a->len+b->len+1)*20);
   a->col = realloc(a->col,sizeof(*a->col)*(a->len+b->len+1)*20);
   a->trans = realloc(a->trans,sizeof(*a->trans)*(a->len+b->len+1)*20);
+	a->tri = realloc(a->tri,sizeof(*a->tri)*(a->tlen+b->tlen+1)*20);
 	a->len+=b->len;
-  
-  if(a->pix==NULL||a->col==NULL||a->trans==NULL)
+  a->tlen+=b->tlen;
+  if(a->tri==NULL||a->pix==NULL||a->col==NULL||a->trans==NULL)
     err("failed to reallocate float array",pexit);
   for(int i = 0; i<=b->len*2; i++){
     a->pix[a_len*2+i] = b->pix[i];  
@@ -612,6 +796,9 @@ void join_glfl_a(glfl_ar* a, glfl_ar* b){
   }
 	for(int i = 0; i<=b->len; i++){
     a->trans[a_len+i] = b->trans[i];  
+  }
+	for(int i = 0; i<=b->tlen; i++){
+    a->tri[a_len*6+i] = b->tri[i];  
   }
 }
 point_arr* polygon3d(double* vx, double*vy, double* vz, int n){
@@ -826,17 +1013,17 @@ point_m* rect3d_gen(double* tl, double* tr, double* bl, double*br,
 	}
 	return mm;
 }
-int main(int argc,char*argv[]){
-	
+int main(int argc,char*argv[]){	
   flag_handle(argc,argv);
   atexit(sig_handle);
-  GLFWwindow* w = glfw_init();
+	GLFWwindow* w = glfw_init();
   refresh_size(w);
   GLenum err = glewInit();
   if (err != GLEW_OK)
     pexit(1); 
   if (!GLEW_VERSION_2_1)  
     pexit(1);
+	
   GLuint vid = vshader_comp(vshader_src);
   GLuint fid = fshader_comp(fshader_src);
   prog = build_shader(vid,fid);
@@ -844,7 +1031,7 @@ int main(int argc,char*argv[]){
   logm("built shaders");
   
   
-
+	/*
   double tl[3] = {5.0,200.0,200.0};
   double tr[3] = {200.0,200.0,200.0};
   double bl[3] = {5.0,5.0,200.0};
@@ -858,7 +1045,13 @@ int main(int argc,char*argv[]){
 	float gg = 0.0;
 	float bb = 1.0;
 	point_m* aaaa = rect3d_gen(tl,tr,bl,br,tl2,tr2,bl2,br2,rr,gg,bb);
-	
+	*/
+	double xxx[4] = {2.0,100.0,50.0,2.0};
+	double yyy[4] = {2.0,2.0,100.0,2.0};
+	double zzz[4] = {2.0,2.0,2.0,2.0};	
+	point_m* aaaa = malloc(sizeof(*aaaa)*5);
+	aaaa->len = 0;
+	aaaa[0].at = polygon3d(xxx,yyy,zzz,5);
 	int max_r = 630;
   double half_max_r = (double)max_r/2/2;
   double pl_x = 0;
@@ -870,7 +1063,7 @@ int main(int argc,char*argv[]){
   double frames = 0;
   t = clock();
   double frame_limit = 60;
-	double single_frame = (float)1/frame_limit*1E+6;
+	double single_frame = ((float)1/frame_limit)*1E+6;
 	char sf_time_msg[60];
 	sprintf(sf_time_msg,"%.3fµs per frame ≈ %.3ffps",single_frame,frame_limit);
 	info(sf_time_msg);
@@ -881,28 +1074,17 @@ int main(int argc,char*argv[]){
 	info("entering main loop");
 	for(;;){	
 	 	clock_gettime(CLOCK_REALTIME,&tem_t);
-    double p1 = plr_x*0.01; 
+    glfw_clear(w);
+		double p1 = plr_x*0.01; 
     double p2 = plr_y*0.01;
     double p3 = 0;
     double p4 = pl_y;
     double p5 = -pl_y+pl_z;
-    double p6 = pl_x;
-    /*
-    glfl_ar* bba = perspective_proj(w,e,p1,p2,p3,p4,p5,p6);
-		glfl_ar* bbb = perspective_proj(w,b,p1,p2,p3,p4,p5,p6);	
-		glfl_ar* bbc = perspective_proj(w,c,p1,p2,p3,p4,p5,p6);	
-		glfl_ar* bbd = perspective_proj(w,d,p1,p2,p3,p4,p5,p6);
-		glfl_ar* bbe = perspective_proj(w,e,p1,p2,p3,p4,p5,p6);	
-		glfl_ar* bbf = perspective_proj(w,f,p1,p2,p3,p4,p5,p6);
-		join_glfl_a(bba,bbb);
-		join_glfl_a(bba,bbc);
-		join_glfl_a(bba,bbd);
-		join_glfl_a(bba,bbe);
-		join_glfl_a(bba,bbf);
-		*/
+    double p6 = pl_x; 
 
-		if(aaaa->len>=0||1){
+		if(aaaa->len>=0){
 		glfl_ar* bba = perspective_proj(w,aaaa[0].at,p1,p2,p3,p4,p5,p6);
+		/*if(aaaa->len>0){
 		for(int i = 1; i<=aaaa->len-1; i++){
 
 			glfl_ar* bbb = perspective_proj(w,aaaa[i].at,p1,p2,p3,p4,p5,p6);
@@ -912,22 +1094,21 @@ int main(int argc,char*argv[]){
 			free(bbb->col);
 			free(bbb->pix);
 			free(bbb->trans);
+			free(bbb->tri);
 			free(bbb);
 		}
-
+		}
+		*/
 		render_p(bba);
-
+		free(bba->tri);
 		free(bba->trans);
-
 		free(bba->col);
-
 		free(bba->pix);
-
 		free(bba);
 		}
 
 		glfw_load(w);
-
+		
     int mod_move=2;
     double run_mul=2;
     glfwPollEvents(); 
@@ -1000,7 +1181,7 @@ int main(int argc,char*argv[]){
       pl_y+=sinf((half_max_r+plr_y)*0.01)*mul; 
     }
     if(glfwWindowShouldClose(w)||(glfwGetKey(w,GLFW_KEY_Q)))break; 
-		glfw_clear(w); 
+		 
 		if(1){
 		if(single_frame>0){
 	 		clock_gettime(CLOCK_REALTIME,&tem_t2);
@@ -1028,7 +1209,7 @@ int main(int argc,char*argv[]){
   free(a->vert);
   free(a);
   */
-	for(int i = 0; i!=aaaa->len; i++){
+	for(int i = 0; i<=aaaa->len; i++){
 		free(aaaa[i].at->c);
 		free(aaaa[i].at->vert);
 		free(aaaa[i].at);
