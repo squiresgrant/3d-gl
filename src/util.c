@@ -80,7 +80,7 @@ void sig_handle(void){
 				sprintf(ad,"%p",allocations[i].addr);
 				ad[0]='\20';
 				ad[1]='\20';
-				printf("   | - <\x1b[90m0x\x1b[0m%s> %s:%s:%i, %lu bytes initially allocated\n",ad,allocations[i].file,allocations[i].function,allocations[i].line,allocations[i].size);
+				printf("   | - <\x1b[90m0x\x1b[0m%s> %s:%s:%i, %lu bytes initially allocated\n",ad,allocations[i].file,allocations[i].function,allocations[i].line,allocations[i].size);	
 			}
 		}
 		(free)(allocations);

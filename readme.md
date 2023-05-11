@@ -9,6 +9,10 @@ optional flags : -Dskip_memory_trace -Dstfu
 
 - fix the fps counter, its probably wrong 
 
+- color triangles
+
+-animations 
+
 # known issues
 
-- glfw & glew causes memory leak (not lost, related to video drivers)
+- none atm:)
