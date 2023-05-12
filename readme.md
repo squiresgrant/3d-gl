@@ -1,17 +1,19 @@
 
-optimized build : `clang ./src/*.c -lm -lglfw -lGL -lGLEW -fno-trapping-math`
+optimized build : `clang ./src/*.c -lm -lglfw -lGL -lGLEW -fno-trapping-math -Dskip_memory_trace`
 
-optional flags : -Dskip_memory_trace -Dstfu
+build flags : -Dskip_memory_trace -Dstfu -D_debug
 
 # todo
 
-- find a better epsilon
-
 - fix the fps counter, its probably wrong 
 
-- color triangles
+- color triangles (more detailed)
 
--animations 
+- separate alloc tracing, and counting
+
+- animations 
+
+- simple transparency
 
 # known issues
 

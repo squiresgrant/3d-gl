@@ -4,8 +4,10 @@
 #include "string.h"
 #ifndef __util__
 #define __util__
+
 static const double FL_DIS = 1e-7;
 static const double NaN = 0.0f/0.0f;
+static const int forced_length = 20;
 
 #define greater(a,b) ((a)>(b)?(a):(b))
 #define lesser(a,b) ((a)>(b)?(b):(a))
@@ -13,10 +15,17 @@ static const double NaN = 0.0f/0.0f;
 
 #ifndef skip_memory_trace
 #define malloc(X) mmalloc(X,(char*)__FILE__,(int)__LINE__,(char*)__FUNCTION__);
-#define free(X) ffree(X,(char*)__FILE__,(int)__LINE__,(char*)__FUNCTION__);
+#define free(X) ffree(X,(char*)__FILE__,(int)__LINE__,(char*)__FUNCTION__); X=NULL;
 #endif
 
 #ifndef stfu
+
+#ifdef _debug 
+#define debug(s) debug_m(s,__FILE__,__LINE__);
+#else 
+#define debug(s)
+#endif
+
 #define err(s,f,...) err_m(s,f,__FILE__,__LINE__,##__VA_ARGS__);
 #define warn(s) warn_m(s,__FILE__,__LINE__);
 #define info(s) info_m(s,__FILE__,__LINE__);
@@ -30,9 +39,10 @@ static const double NaN = 0.0f/0.0f;
 #endif 
 
 double binomial(int n, int k);
-void* mmalloc(ulong,char*,int,char*);
+void* mmalloc(size_t,char*,int,char*);
 void ffree(void*,char*,int,char*);
 void err_m(char*,void (*)(int),char*,int);
+void debug_m(char*,char*,int,...);
 void warn_m(char*,char*,int ,...);
 void info_m(char*,char*,int ,...);
 void log_m(char*ca,char*f,int l,...);

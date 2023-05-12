@@ -785,7 +785,6 @@ point_arr* polygon3d(double* vx, double*vy, double* vz, int n,float r, float g, 
   pa = malloc(sizeof(*pa));
   pa->c = malloc(sizeof(*pa->c)*(get_w()*60));
   pa->vert = malloc(sizeof(*pa->vert)*(n*60));
-
   if(pa->c==NULL||pa->vert==NULL)
     err("failed to allocate polygon array",pexit); 
   n-=1;
@@ -793,10 +792,16 @@ point_arr* polygon3d(double* vx, double*vy, double* vz, int n,float r, float g, 
 		pa->c[i].at.x = vx[i];
 		pa->c[i].at.y = vy[i];	
 		pa->c[i].at.z = vz[i];
+		pa->c[i].at.vertex = 1;
 
 		pa->vert[i].at.x = vx[i];
 		pa->vert[i].at.y = vy[i];	
 		pa->vert[i].at.z = vz[i];
+		pa->vert[i].at.vertex = 1;
+
+		pa->vert[i].color.r = r;
+		pa->vert[i].color.g = g;	
+		pa->vert[i].color.b = b;
 		
 		pa->c[i].color.r = r;
 		pa->c[i].color.g = g;
@@ -981,6 +986,7 @@ point_m* rect3d_gen(double* tl, double* tr, double* bl, double*br,
 int main(int argc,char*argv[]){	
 	flag_handle(argc,argv);
   atexit(sig_handle);
+	
 	GLFWwindow* w = glfw_init();
   refresh_size(w);
   GLenum err = glewInit();
@@ -1017,7 +1023,7 @@ int main(int argc,char*argv[]){
 	double zzz[4] = {2.0,2.0,2.0,2.0};	
 	point_m* aaaa = malloc(sizeof(*aaaa)*5);
 	aaaa->len = 0;
-	aaaa[0].at = polygon3d(xxx,yyy,zzz,5);
+	aaaa[0].at = polygon3d(xxx,yyy,zzz,5,1.0,1.0,0.0);
 	*/
 	int max_r = 630;
   double half_max_r = (double)max_r/2/2;
@@ -1051,13 +1057,16 @@ int main(int argc,char*argv[]){
 
 		if(aaaa->len>=0){
 		glfl_ar**con = malloc(sizeof **con * aaaa->len);
+		int con_len = 0;
 		glfl_ar* bba = perspective_proj(w,aaaa[0].at,p1,p2,p3,p4,p5,p6);
-		con[0] = bba;
+		con[con_len] = bba;
+		con_len++;
 		if(aaaa->len>0){
 		for(int i = 1; i<=aaaa->len-1; i++){
 			glfl_ar* bbb = perspective_proj(w,aaaa[i].at,p1,p2,p3,p4,p5,p6);
 			//printf("%f\n",bbb->depth);
-			con[i] = bbb;
+			con[con_len] = bbb;
+			con_len++;
 			//join_glfl_a(bba,bbb);
 			//free(bbb->col);
 			//free(bbb->pix);
@@ -1068,7 +1077,6 @@ int main(int argc,char*argv[]){
 			
 			}
 		}
-		
 		for(int i = 0; i<=aaaa->len-2; i++){
 			//printf("%i %i\n",i,aaaa->len-1);
 			if(con[i]->max.z<con[i+1]->min.z||
@@ -1079,11 +1087,14 @@ int main(int argc,char*argv[]){
 				con[i] = con[i+1];	
 				con[i+1] = tempp;	
 
-				i=-1;
+				i-=1;
 			}
 		}
+		
+		//char* absabd = malloc(1000);
+		//absabd = "aaa\n";
 		glfl_ar* push = con[0];
-		for(int i = 1; i<=aaaa->len-1;i++){
+		for(int i = 1; i<=con_len-1;i++){
 			//printf("%f %f\n",con[i]->max.x,con[i]->min.x);
 			join_glfl_a(push,con[i]);
 			free(con[i]->tri);

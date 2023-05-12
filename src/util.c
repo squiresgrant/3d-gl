@@ -3,14 +3,16 @@
 #include "util.h"
 #include <math.h>
 #include "strings.h"
-ulong allocs = 0;
-int forced_length = 15;
+unsigned long allocs = 0;
+unsigned long frees = 0;
+int log_level = 0;
+int __signal = 0;
 typedef struct {
 	void* addr;
 	char* file;
 	char* function;
 	int line;
-	ulong size;
+	unsigned long size;
 } alloc;
 alloc* allocations = NULL;
 double binomial(int n, int k){
@@ -22,13 +24,16 @@ double binomial(int n, int k){
   } 
   return v;
 }
-void* mmalloc(ulong X,char*file,int line,char*func){
+void* mmalloc(size_t X,char*file,int line,char*func){
 	if(allocations==NULL){
 		allocations=(malloc)(sizeof(*allocations)*2);
 	}
 	allocations=(realloc)(allocations,sizeof(*allocations)*(allocs+1));
 	void* mal = (malloc)(X);
+	if(mal==NULL)
+		err("failed to malloc",pexit);
 	allocations[allocs].addr = mal;
+	
 	allocations[allocs].function = func;
 	allocations[allocs].file = file;
 	allocations[allocs].line = line;
@@ -38,17 +43,22 @@ void* mmalloc(ulong X,char*file,int line,char*func){
 }
 
 void ffree(void* X,char*file,int line,char*func){
-	for(ulong i = 0; i<=allocs; i++){
+	if(X==NULL){
+		warn("tried to free a null pointer");
+		return;	
+	}
+	for(unsigned long i = 0; i<=allocs-1; i++){
 		if(allocations[i].addr==X){
 			allocations[i].addr = NULL;
 			break;
 		}
 	}
+	 
 	(free)(X);
-  allocs--;
+	frees++;
+  //allocs--;
 }
-int log_level = 0;
-int __signal = 0;
+
 void pexit(int s){
   __signal = s;
   exit(s);
@@ -69,11 +79,13 @@ void sig_handle(void){
 	#endif
 
 	#ifndef skip_memory_trace
-  if(allocs>0){
-    char ssa[45];
-    sprintf(ssa,"%s | (found %i)","uneven allocations, memory leak(s)",(int)nearbyint(allocs));
+  if(allocs!=frees){
+    char ssa[200];
+    sprintf(ssa,"%s | (%i/%i freed)","uneven allocations, memory leak(s)",(int)nearbyint(allocs),(int)nearbyint(frees));
     warn(ssa);
-		for(ulong i = 0; i<=allocs; i++){
+		
+		
+		for(unsigned long i = 0; i<=allocs-1; i++){	
 			if(allocations[i].addr!=NULL){
 				
 				char ad[50];
@@ -83,9 +95,11 @@ void sig_handle(void){
 				printf("   | - <\x1b[90m0x\x1b[0m%s> %s:%s:%i, %lu bytes initially allocated\n",ad,allocations[i].file,allocations[i].function,allocations[i].line,allocations[i].size);	
 			}
 		}
-		(free)(allocations);
+		
   }
-  if(allocs==0)
+	if(allocations!=NULL)
+	(free)(allocations);
+  if(allocs==frees)
     info("even allocations, no internal leaks");
 	#endif
 	if(__signal==0){
@@ -105,7 +119,7 @@ char* force_ca_length(char*inp,int len){
   char* nya = malloc(sizeof(*nya)*(len+1));
   int skip = 0;
   for(int i = 0;; i++){
-    
+    nya[i] = ' ';
     if((inp[i]=='\0'||skip)&&i>=len)
       break;
     if(inp[i]=='\0')
@@ -120,7 +134,7 @@ char* force_ca_length(char*inp,int len){
       nya[i] = ' '; 
     else
       nya[i] = inp[i];
-  }
+  }	
   if(!skip){
     nya[2] = '.';
     nya[1] = '.';
@@ -158,6 +172,16 @@ void info_m(char*ca,char*f,int l,...){
   sprintf(nn,"%s:%i",f,l);
   char* aa = force_ca_length(nn,forced_length);
   printf("\x1b[90m%s [ info ] %s\x1b[0m\n",aa,ca);
+  free(aa);
+}
+void debug_m(char*ca,char*f,int l,...){
+  if(log_level<-1)
+    return;
+  int len = ca_size(f) + int_len(l); 
+  char nn[len]; 
+  sprintf(nn,"%s:%i",f,l);
+  char* aa = force_ca_length(nn,forced_length);
+  printf("\e[38;5;69m%s [ dbug ] \e[0m\x1b[90m%s\x1b[0m\n",aa,ca);
   free(aa);
 }
 void log_m(char*ca,char*f,int l,...){
