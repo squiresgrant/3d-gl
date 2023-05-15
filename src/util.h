@@ -13,7 +13,10 @@ static const int forced_length = 20;
 #define lesser(a,b) ((a)>(b)?(b):(a))
 #define diff(a,b) ((a)>(b)?(a)-(b):(b)-(a))
 
-#ifndef skip_memory_trace
+#if defined(memory_trace) || defined(memory_count)
+#ifdef memory_trace 
+//maybe add warning here
+#endif
 #define malloc(X) mmalloc(X,(char*)__FILE__,(int)__LINE__,(char*)__FUNCTION__);
 #define free(X) ffree(X,(char*)__FILE__,(int)__LINE__,(char*)__FUNCTION__); X=NULL;
 #endif

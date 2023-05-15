@@ -25,11 +25,13 @@ double binomial(int n, int k){
   return v;
 }
 void* mmalloc(size_t X,char*file,int line,char*func){
+	void* mal = (malloc)(X);
+	#ifdef memory_trace
 	if(allocations==NULL){
 		allocations=(malloc)(sizeof(*allocations)*2);
 	}
 	allocations=(realloc)(allocations,sizeof(*allocations)*(allocs+1));
-	void* mal = (malloc)(X);
+	
 	if(mal==NULL)
 		err("failed to malloc",pexit);
 	allocations[allocs].addr = mal;
@@ -38,8 +40,10 @@ void* mmalloc(size_t X,char*file,int line,char*func){
 	allocations[allocs].file = file;
 	allocations[allocs].line = line;
 	allocations[allocs].size = X;
+	#endif
 	allocs++;
 	return mal;
+	
 }
 
 void ffree(void* X,char*file,int line,char*func){
@@ -47,13 +51,14 @@ void ffree(void* X,char*file,int line,char*func){
 		warn("tried to free a null pointer");
 		return;	
 	}
+	#ifdef memory_trace	
 	for(unsigned long i = 0; i<=allocs-1; i++){
 		if(allocations[i].addr==X){
 			allocations[i].addr = NULL;
 			break;
 		}
 	}
-	 
+	#endif 
 	(free)(X);
 	frees++;
   //allocs--;
@@ -64,27 +69,28 @@ void pexit(int s){
   exit(s);
 }
 void sig_handle(void){
+	
 	if(log_level<=-1){
-		#ifndef skip_memory_trace 
+		#ifdef memory_trace 
 		(free)(allocations);
 		#endif
 		return;
 	}
 	
 	#ifdef stfu
-	#ifndef skip_memory_trace 
+	#ifndef memory_trace 
 	(free)(allocations);
 	#endif
 	return;
 	#endif
-
-	#ifndef skip_memory_trace
+	
+	#if defined(memory_trace) || defined(memory_count)
   if(allocs!=frees){
     char ssa[200];
-    sprintf(ssa,"%s | (%i/%i freed)","uneven allocations, memory leak(s)",(int)nearbyint(allocs),(int)nearbyint(frees));
+    sprintf(ssa,"%s | (%i/%i freed)","uneven allocations, memory leak(s)",(int)nearbyint(frees),(int)nearbyint(allocs));
     warn(ssa);
-		
-		
+				
+		#ifdef memory_trace
 		for(unsigned long i = 0; i<=allocs-1; i++){	
 			if(allocations[i].addr!=NULL){
 				
@@ -95,12 +101,13 @@ void sig_handle(void){
 				printf("   | - <\x1b[90m0x\x1b[0m%s> %s:%s:%i, %lu bytes initially allocated\n",ad,allocations[i].file,allocations[i].function,allocations[i].line,allocations[i].size);	
 			}
 		}
+		#endif
 		
   }
-	if(allocations!=NULL)
-	(free)(allocations);
-  if(allocs==frees)
+	if(allocs==frees)
     info("even allocations, no internal leaks");
+	if(allocations!=NULL)
+		(free)(allocations); 
 	#endif
 	if(__signal==0){
     printf("\x1b[90mexited with \x1b[32m\x1b[1msignal [ %i ] \x1b[0m\x1b[90mgraceful exit\x1b[0m (meow)\n",__signal); 

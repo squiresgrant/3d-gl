@@ -1,7 +1,7 @@
 
-optimized build : `clang ./src/*.c -lm -lglfw -lGL -lGLEW -fno-trapping-math -Dskip_memory_trace`
+optimized build : `clang ./src/*.c -lm -lglfw -lGL -lGLEW -fno-trapping-math`
 
-build flags : -Dskip_memory_trace -Dstfu -D_debug
+build flags : -Dmemory_trace -Dstfu -D_debug -Dmemory_count
 
 # todo
 
