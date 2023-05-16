@@ -23,10 +23,10 @@ static const int forced_length = 20;
 
 #ifndef stfu
 
-#ifdef _debug 
+#ifdef __debug 
 #define debug(s) debug_m(s,__FILE__,__LINE__);
 #else 
-#define debug(s)
+#define debug(s){};
 #endif
 
 #define err(s,f,...) err_m(s,f,__FILE__,__LINE__,##__VA_ARGS__);
