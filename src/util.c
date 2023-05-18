@@ -26,6 +26,8 @@ double binomial(int n, int k){
 }
 void* mmalloc(size_t X,char*file,int line,char*func){
 	void* mal = (malloc)(X);
+	if(mal==NULL)
+		abort();
 	#ifdef memory_trace
 	if(allocations==NULL){
 		allocations=(malloc)(sizeof(*allocations)*2);

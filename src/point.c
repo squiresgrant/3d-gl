@@ -103,19 +103,15 @@ GLuint prog;
 static const char* vshader_src = 
   "#version 330\n"
   "layout (location = 0) in vec3 pos;\n"
-  "layout (location = 1) in vec3 color;\n"
-  "layout (location = 2) in float trans;\n"
+  "layout (location = 1) in vec3 color;\n" 
 	"out vec3 ncolor;\n"
-  "out float ntrans;\n"
 	"void main(){\n"
   "ncolor = color;\n"
-  "ntrans = trans;\n"
 	"gl_Position = vec4(pos,1.0);\n" 
   "};";
 static const char* fshader_src = 
   "#version 330\n"
   "in vec3 ncolor;\n"
-  "in float ntrans;\n"
 	"out vec4 color;\n"
   "void main(){\n"
   //"gl_FragColor = vec4(1.0,0.0,1.0,1.0);\n"
@@ -181,6 +177,7 @@ typedef struct {
 	//double depth;
 	cord max;
 	cord min;
+	int lin;
 } glfl_ar;
 void render_p(glfl_ar* bba,int tri){
 	//glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC1_ALPHA);
@@ -210,17 +207,8 @@ void render_p(glfl_ar* bba,int tri){
   glBindBuffer(GL_ARRAY_BUFFER,colb);
   glVertexAttribPointer(1,3,GL_FLOAT,GL_FALSE,0,(void*)0);
 	
-	GLuint trab;
-  glGenBuffers(1,&trab);
-  glBindBuffer(GL_ARRAY_BUFFER,trab);
-  glBufferData(GL_ARRAY_BUFFER,sizeof(*bba->trans)*(bba->len*2),bba->trans,GL_STATIC_DRAW);
-
-  glEnableVertexAttribArray(2);
-  glBindBuffer(GL_ARRAY_BUFFER,trab);
-  glVertexAttribPointer(2,1,GL_FLOAT,GL_FALSE,0,(void*)0);
-
 	glDrawArrays(GL_TRIANGLES,0,bba->tlen*3);
-  glDeleteBuffers(1,&trab);
+
 	glDeleteBuffers(1,&vetb);
   glDeleteBuffers(1,&colb);
 	} else {
@@ -241,18 +229,9 @@ void render_p(glfl_ar* bba,int tri){
   glEnableVertexAttribArray(1);
   glBindBuffer(GL_ARRAY_BUFFER,colb);
   glVertexAttribPointer(1,3,GL_FLOAT,GL_FALSE,0,(void*)0);
-	
-	GLuint trab;
-  glGenBuffers(1,&trab);
-  glBindBuffer(GL_ARRAY_BUFFER,trab);
-  glBufferData(GL_ARRAY_BUFFER,sizeof(*bba->trans)*(bba->len*2),bba->col,GL_STATIC_DRAW);
-
-  glEnableVertexAttribArray(2);
-  glBindBuffer(GL_ARRAY_BUFFER,trab);
-  glVertexAttribPointer(2,1,GL_FLOAT,GL_FALSE,0,(void*)0);
 
 	glDrawArrays(GL_POINTS,0,bba->len);
-  glDeleteBuffers(1,&trab);
+
 	glDeleteBuffers(1,&vetb);
   glDeleteBuffers(1,&colb);
 	}
@@ -581,6 +560,304 @@ glfl_ar* poly_to_tri(GLfloat* pixels,GLfloat* colors,int fc_len){
 	rr->len = c_len;
 	return rr;
 
+}
+glfl_ar** transp(glfl_ar** con,int lle){
+	int o_a_len = lle;
+	int aal[o_a_len];
+	glfl_ar** neww = malloc(sizeof ** neww * lle * 40);
+		int neww_l = 0;
+		for(int i = 0; i<=o_a_len-1; i++)
+			aal[i] = con[i]->len;
+		float b_r = 0.0f;
+		float b_g = 0.0f;
+		float b_b = 0.0f;
+		for(int i = 0; i<=o_a_len-1; i++){
+			for(int ii = 0; ii<=con[i]->len; ii++){
+				con[i]->col[ii*3] = (con[i]->col[ii*3] + b_r)/2;
+				con[i]->col[ii*3+1] = (con[i]->col[ii*3+1] + b_g)/2;
+				con[i]->col[ii*3+2] = (con[i]->col[ii*3+2] + b_b)/2;
+			}
+			for(int ii = 0; ii<=con[i]->tlen*4; ii++){
+				con[i]->tricol[ii*3] = (con[i]->tricol[ii*3] + b_r)/2;
+				con[i]->tricol[ii*3+1] = (con[i]->tricol[ii*3+1] + b_g)/2;
+				con[i]->tricol[ii*3+2] = (con[i]->tricol[ii*3+2] + b_b)/2;
+			}
+		}
+		//for(int i = o_a_len-1; i>=0; i--)
+	//		for(int z = o_a_len-1; z>=0; z--)
+	//			printf("	%f %f %f\n",con[z]->col[3],con[z]->col[4],con[z]->col[5]);
+		//printf("s\n");
+		//printf("---\n");
+		for(int i = o_a_len-1; i>=0; i--){
+			for(int z = o_a_len-1; z>=0; z--){
+				if(i!=z){
+					//printf("a\n");
+					float c_r = (con[i]->col[3] + con[z]->col[3])/2;
+					float c_g = (con[i]->col[4] + con[z]->col[4])/2;
+					float c_b = (con[i]->col[5] + con[z]->col[5])/2;
+					//printf("b\n");
+					if(con[i]->max.x>=con[z]->max.x&&con[i]->min.x<=con[z]->min.x&&
+							con[i]->max.y>=con[z]->max.y&&con[i]->min.y<=con[z]->min.y){
+						//printf("c\n");
+						//neww = realloc(neww,sizeof ** neww * (neww_l + 2));
+						neww[neww_l] = malloc(sizeof * neww[neww_l] * (1 + con[i]->len + con[z]->len) * 40);
+						neww[neww_l]->pix = malloc(sizeof * neww[neww_l]->pix * (1 + con[i]->len + con[z]->len) * 4);
+						neww[neww_l]->col = malloc(sizeof * neww[neww_l]->col * (1 + con[i]->len + con[z]->len) * 4);
+						for(int zz = 0; zz<=aal[z]; zz++){
+									neww[neww_l]->pix[zz*2] = con[z]->pix[zz*2];	
+									neww[neww_l]->pix[zz*2+1] = con[z]->pix[zz*2+1];
+									
+									neww[neww_l]->col[zz*3] = c_r;	
+									neww[neww_l]->col[zz*3+1] = c_g;
+									neww[neww_l]->col[zz*3+2] = c_b;
+									/*con[z]->col[zz*3] = 1.0f;	
+									con[z]->col[zz*3+1] = 0.0f;
+									con[z]->col[zz*3+2] = 0.0f;*/
+									
+						}
+						neww[neww_l]->len = aal[z];
+						neww_l++;
+						
+						//err("haven't tested this yet",pexit);
+						continue;
+					}	
+					//printf("c2\n");
+					int o_c = aal[i];
+					cord last; 
+					//printf("-\n");
+					last.z = -2;
+					int lali = -2;
+					//neww = realloc(neww,sizeof ** neww * (neww_l + 2));
+					neww[neww_l] = malloc(sizeof * neww[neww_l]* 90);
+					neww[neww_l]->pix = malloc(sizeof * neww[neww_l]->pix* 4);
+					neww[neww_l]->col = malloc(sizeof * neww[neww_l]->col* 4);
+					neww[neww_l]->len = 0;
+					neww[neww_l]->tlen = 0;
+					//printf("d\n");
+					for(int ii = 0; ii<=o_c-2; ii++){
+						//printf("e\n");
+						//printf("%f %f -> %f %f | %i\n",con[i]->pix[ii*2],con[i]->pix[ii*2+1]
+					//			,con[i]->pix[(ii+1)*2],con[i]->pix[(ii+1)*2+1],aal[z]);
+						if(aal[z]==0)
+							continue;
+						cord ny = poi_d(con[i]->pix[ii*2],con[i]->pix[ii*2+1]
+								,con[i]->pix[(ii+1)*2],con[i]->pix[(ii+1)*2+1],aal[z],con[z]->pix,1,-1);
+						//if(ii==ny.index)
+							//continue;
+						//printf("f\n");
+						if(ny.z!=-1){
+							if(ny.z==1){
+								//debug("multiple intersections");
+								cord tesm = poi_d(con[i]->pix[ii*2],con[i]->pix[ii*2+1]
+								,con[i]->pix[(ii+1)*2],con[i]->pix[(ii+1)*2+1],aal[z],con[z]->pix,0,ny.index);	
+								//printf("%i %f\n",tesm.index,tesm.z);
+								last = ny;
+								ny = tesm;
+								lali=ii;
+								//continue;	
+							}
+							if(ny.z>1)
+								err("too many intersections:( (not convex?)",pexit);
+						
+							if(last.z!=-2){
+								/*
+								if(last.y>ny.y&&last.x>ny.x&&0){
+									cord tem = ny;
+									ny = last;
+									last = tem;
+									//printf("sw\n");
+								}*/
+								
+								//int zzz = 0;
+								//printf("%i,%i | %i %i\n",lali,ii,last.index,ny.index);
+								double zzzz = 77777.0;
+								cord aa = poi_d(con[i]->pix[(lali+1)*2],con[i]->pix[(lali+1)*2+1],zzzz,con[i]->pix[(lali+1)*2+1],con[z]->len,con[z]->pix,0,-1);
+								cord bb = poi_d(con[i]->pix[(lali+1)*2],con[i]->pix[(lali+1)*2+1],-zzzz,con[i]->pix[(lali+1)*2+1],con[z]->len,con[z]->pix,0,-1);
+								//if(aa.z==-1||bb.z==-1)
+							//		printf("AAA\n");
+								int tes = aa.z==-1||bb.z==-1;
+								int iii1 = z;
+								int iii2 = i;
+								cord iiii5 = last;
+								cord aa2 = poi_d(con[iii1]->pix[(iiii5.index+1)*2],con[iii1]->pix[(iiii5.index+1)*2+1],zzzz,con[iii1]->pix[(iiii5.index+1)*2+1],con[iii2]->len,con[iii2]->pix,0,-1);
+								cord bb2 = poi_d(con[iii1]->pix[(iiii5.index+1)*2],con[iii1]->pix[(iiii5.index+1)*2+1],-zzzz,con[iii1]->pix[(iiii5.index+1)*2+1],con[iii2]->len,con[iii2]->pix,0,-1);
+								//if(aa.z==-1||bb.z==-1)
+							//		printf("AAA\n");
+								
+								int tes2 = aa2.z==-1||bb2.z==-1;
+								
+								//printf("%i %i\n",tes,tes2);
+								neww[neww_l]->pix = realloc(neww[neww_l]->pix,
+											sizeof * neww[neww_l]->pix* 4 * (neww[neww_l]->len+1));
+								neww[neww_l]->col = realloc(neww[neww_l]->col,
+											sizeof * neww[neww_l]->col* 4 * (neww[neww_l]->len+1));
+								neww[neww_l]->pix[neww[neww_l]->len*2] = last.x; 
+								neww[neww_l]->pix[neww[neww_l]->len*2+1] = last.y;
+								neww[neww_l]->col[neww[neww_l]->len*3] = c_r;
+								neww[neww_l]->col[neww[neww_l]->len*3+1] = c_g;
+								neww[neww_l]->col[neww[neww_l]->len*3+2] = c_b;
+								neww[neww_l]->len++;
+								
+								//printf("%i %i | %i %i, %i %i\n",neww_l,tes,lali,ii,last.index,ny.index);
+								if(!tes2){
+								//printf("%i %i %i\n",neww_l,last.index,ny.index);
+								for(int zz = last.index+1; zz<=ny.index;
+										zz++){
+									//printf("aa\n");
+									//printf("zzz %lu\n",sizeof * neww[neww_l]->pix* 4 * (neww[neww_l]->len+1));
+									neww[neww_l]->pix = realloc(neww[neww_l]->pix,
+											sizeof * neww[neww_l]->pix* 4 * (neww[neww_l]->len+1));
+									neww[neww_l]->col = realloc(neww[neww_l]->col,
+											sizeof * neww[neww_l]->col* 4 * (neww[neww_l]->len+1));
+									neww[neww_l]->pix[neww[neww_l]->len*2] = con[z]->pix[zz*2]; 
+									neww[neww_l]->pix[neww[neww_l]->len*2+1] = con[z]->pix[zz*2+1];
+									neww[neww_l]->col[neww[neww_l]->len*3] = c_r;
+									neww[neww_l]->col[neww[neww_l]->len*3+1] = c_g;
+									neww[neww_l]->col[neww[neww_l]->len*3+2] = c_b;
+									neww[neww_l]->len++;
+									
+									//zzz++;
+									
+									/*		
+									con[z]->col[zz*3] = 1.0f;	
+									con[z]->col[zz*3+1] = 0.0f;
+									con[z]->col[zz*3+2] = 0.0f;
+									*/
+								} 
+								
+								} else {
+									
+									//printf("%i | %i %i\n",neww_l,last.index,ny.index);	
+									for(int zz = last.index; zz!=ny.index;
+										zz--){
+									//printf("%i, %i / %i / %i\n",neww_l,zz,last.index,o_c);
+										//printf("aa\n");
+									//printf("zzz %lu\n",sizeof * neww[neww_l]->pix* 4 * (neww[neww_l]->len+1));
+									neww[neww_l]->pix = realloc(neww[neww_l]->pix,
+											sizeof * neww[neww_l]->pix* 4 * (neww[neww_l]->len+1));
+									neww[neww_l]->col = realloc(neww[neww_l]->col,
+											sizeof * neww[neww_l]->col* 4 * (neww[neww_l]->len+1));
+									neww[neww_l]->pix[neww[neww_l]->len*2] = con[z]->pix[zz*2]; 
+									neww[neww_l]->pix[neww[neww_l]->len*2+1] = con[z]->pix[zz*2+1];
+									neww[neww_l]->col[neww[neww_l]->len*3] = c_r;
+									neww[neww_l]->col[neww[neww_l]->len*3+1] = c_g;
+									neww[neww_l]->col[neww[neww_l]->len*3+2] = c_b;
+									neww[neww_l]->len++;
+									//printf("%i\n",zz);
+									//break;
+									if(zz<=0){
+										if(0&&o_c-1==zz)
+											break;
+										else
+											zz=o_c;
+									}
+									//zzz++;
+									
+									/*		
+									con[z]->col[zz*3] = 1.0f;	
+									con[z]->col[zz*3+1] = 0.0f;
+									con[z]->col[zz*3+2] = 0.0f;
+									*/
+								}
+								
+								}
+								//printf("hhhh\n");
+								neww[neww_l]->pix = realloc(neww[neww_l]->pix,
+											sizeof * neww[neww_l]->pix* 4 * (neww[neww_l]->len+1));
+								neww[neww_l]->col = realloc(neww[neww_l]->col,
+											sizeof * neww[neww_l]->col* 4 * (neww[neww_l]->len+1));
+								neww[neww_l]->pix[neww[neww_l]->len*2] = ny.x;
+								neww[neww_l]->pix[neww[neww_l]->len*2+1] = ny.y;
+								neww[neww_l]->col[neww[neww_l]->len*3] = c_r;
+								neww[neww_l]->col[neww[neww_l]->len*3+1] = c_g;
+								neww[neww_l]->col[neww[neww_l]->len*3+2] = c_b;
+								neww[neww_l]->len++;
+								
+								//printf("%f %f\n",aa.z,bb.z);
+								
+								if(tes){
+								//printf("%i %i %i\n",neww_l,lali,ii);
+									for(int zz = ii+1; zz!=lali+1;
+										zz++){
+									
+									neww[neww_l]->pix = realloc(neww[neww_l]->pix,
+											sizeof * neww[neww_l]->pix* 4 * (neww[neww_l]->len+1));
+									neww[neww_l]->col = realloc(neww[neww_l]->col,
+											sizeof * neww[neww_l]->col* 4 * (neww[neww_l]->len+1));
+									neww[neww_l]->pix[neww[neww_l]->len*2] = con[i]->pix[zz*2]; 
+									neww[neww_l]->pix[neww[neww_l]->len*2+1] = con[i]->pix[zz*2+1];
+									neww[neww_l]->col[neww[neww_l]->len*3] = c_r;
+									neww[neww_l]->col[neww[neww_l]->len*3+1] = c_g;
+									neww[neww_l]->col[neww[neww_l]->len*3+2] = c_b;
+									neww[neww_l]->len++;
+									//break;
+									if(zz>=o_c-1)
+										zz=-1;
+									//zzz++;
+									//break;
+									/*
+									con[i]->col[zz*3] = 1.0f;	
+									con[i]->col[zz*3+1] = 0.0f;
+									con[i]->col[zz*3+2] = 0.0f;
+									*/	
+								}
+								} else {
+							//printf("%i %i %i\n",neww_l,ii,lali);	
+									for(int zz = ii; zz>=lali+1;
+										zz--){
+									
+									neww[neww_l]->pix = realloc(neww[neww_l]->pix,
+											sizeof * neww[neww_l]->pix* 4 * (neww[neww_l]->len+1));
+									neww[neww_l]->col = realloc(neww[neww_l]->col,
+											sizeof * neww[neww_l]->col* 4 * (neww[neww_l]->len+1));
+									neww[neww_l]->pix[neww[neww_l]->len*2] = con[i]->pix[zz*2]; 
+									neww[neww_l]->pix[neww[neww_l]->len*2+1] = con[i]->pix[zz*2+1];
+									neww[neww_l]->col[neww[neww_l]->len*3] = c_r;
+									neww[neww_l]->col[neww[neww_l]->len*3+1] = c_g;
+									neww[neww_l]->col[neww[neww_l]->len*3+2] = c_b;
+									neww[neww_l]->len++;
+									//break;
+									//zzz++;
+									
+									/*
+									con[i]->col[zz*3] = 1.0f;	
+									con[i]->col[zz*3+1] = 0.0f;
+									con[i]->col[zz*3+2] = 0.0f;
+									*/	
+								}
+								}
+								
+								//zzz++;
+							
+								neww[neww_l]->pix = realloc(neww[neww_l]->pix,
+											sizeof * neww[neww_l]->pix* 4 * (neww[neww_l]->len+1));
+								neww[neww_l]->col = realloc(neww[neww_l]->col,
+											sizeof * neww[neww_l]->col* 4 * (neww[neww_l]->len+1));
+								neww[neww_l]->pix[neww[neww_l]->len*2] = neww[neww_l]->pix[0];
+								neww[neww_l]->pix[neww[neww_l]->len*2+1] = neww[neww_l]->pix[1];
+								neww[neww_l]->col[neww[neww_l]->len*3] = c_r;
+								neww[neww_l]->col[neww[neww_l]->len*3+1] = c_g;
+								neww[neww_l]->col[neww[neww_l]->len*3+2] = c_b;
+								neww[neww_l]->len++;
+							
+								//last.z = -2;
+							//lali = -2;
+							}
+							
+							lali = ii;
+							last = ny;	
+						}
+
+					}
+				neww_l++;
+				}
+					
+			}
+		}
+		//printf("---\n");
+	for(int i = 0; i<=neww_l-1;i++)
+		neww[i]->lin = neww_l;
+	return neww;
 }
 glfl_ar* perspective_proj(GLFWwindow* b,point_arr* c,double ctx,double cty,double ctz,double cx, double cy, double cz){ 
 
@@ -1033,9 +1310,11 @@ int main(int argc,char*argv[]){
 	
 	//*/
 	///*
+	
 	double xxx[5] = {0.0,100.0,100.0,0.0,0.0};
 	double yyy[5] = {0.0,0.0,100.0,100.0,0.0};
 	double zzz[5] = {2.0,2.0,2.0,2.0,2.0};
+	
 	point_m* aaaa = malloc(sizeof(*aaaa)*5);
 	aaaa->len = 0;
 	aaaa[0].at = polygon3d(xxx,yyy,zzz,6,1.0,1.0,0.0);
@@ -1045,7 +1324,14 @@ int main(int argc,char*argv[]){
 	double zzz2[5] = {20.0,20.0,20.0,20.0,20.0};	
 	//point_m* aaaa = malloc(sizeof(*aaaa)*5);
 	aaaa->len = 2;
-	aaaa[1].at = polygon3d(xxx2,yyy2,zzz2,6,1.0,1.0,0.0);
+	aaaa[1].at = polygon3d(xxx2,yyy2,zzz2,6,1.0,0.0,1.0);
+	
+	double xxx3[5] = {2.0,100.0,75.0,50.0,2.0};
+	double yyy3[5] = {100.0,100.0,25.0,20.0,100.0};
+	double zzz3[5] = {40.0,40.0,40.0,40.0,40.0};	
+	//point_m* aaaa = malloc(sizeof(*aaaa)*5);
+	aaaa->len = 3;
+	aaaa[2].at = polygon3d(xxx3,yyy3,zzz3,6,0.0,0.0,1.0);
 	
 	
 	//*/
@@ -1115,202 +1401,13 @@ int main(int argc,char*argv[]){
 			}
 		}
 		//printf("---\n");
-		int o_a_len = aaaa->len;
-		int aal[aaaa->len];
-		glfl_ar** neww = malloc(sizeof ** neww);
-		int neww_l = 0;
-		for(int i = 0; i<=aaaa->len-1; i++)
-			aal[i] = con[i]->len;
-
-		for(int i = 0; i<=aaaa->len-1; i++){
-			for(int z = 0; z<=aaaa->len-1; z++){
-				if(i!=z){
-					if(con[i]->max.x>=con[z]->max.x&&con[i]->min.x<=con[z]->min.x&&
-							con[i]->max.y>=con[z]->max.y&&con[i]->min.y<=con[z]->min.y){
-						neww = realloc(neww,sizeof ** neww * (neww_l + 1));
-						neww[neww_l] = malloc(sizeof * neww[neww_l] * (con[i]->len + con[z]->len) * 4);
-						neww[neww_l]->pix = malloc(sizeof * neww[neww_l]->pix * (con[i]->len + con[z]->len) * 4);
-						neww[neww_l]->col = malloc(sizeof * neww[neww_l]->col * (con[i]->len + con[z]->len) * 4);
-						for(int zz = 0; zz<=aal[z]; zz++){
-									neww[neww_l]->pix[zz*2] = con[z]->pix[zz*2];	
-									neww[neww_l]->pix[zz*2+1] = con[z]->pix[zz*2+1];
-									
-									neww[neww_l]->col[zz*3] = con[z]->col[zz*3];	
-									neww[neww_l]->col[zz*3+1] = con[z]->col[zz*3+1];
-									neww[neww_l]->col[zz*3+2] = con[z]->col[zz*3+2];
-									/*con[z]->col[zz*3] = 1.0f;	
-									con[z]->col[zz*3+1] = 0.0f;
-									con[z]->col[zz*3+2] = 0.0f;*/
-									
-						}
-						neww[neww_l]->len = aal[z];
-						neww_l++;
-						
-						//err("haven't tested this yet",pexit);
-						continue;
-					}	
-					int o_c = aal[i];
-					cord last; 
-					//printf("-\n");
-					last.z = -2;
-					int lali = -2;
-					neww = realloc(neww,sizeof ** neww * (neww_l + 2));
-					neww[neww_l] = malloc(sizeof * neww[neww_l]* 90);
-					neww[neww_l]->pix = malloc(sizeof * neww[neww_l]->pix* 4);
-					neww[neww_l]->col = malloc(sizeof * neww[neww_l]->col* 4);
-					neww[neww_l]->len = 0;
-					neww[neww_l]->tlen = 0;
-					for(int ii = 0; ii<=o_c-2; ii++){
-						cord ny = poi_d(con[i]->pix[ii*2],con[i]->pix[ii*2+1]
-								,con[i]->pix[(ii+1)*2],con[i]->pix[(ii+1)*2+1],aal[z],con[z]->pix,1,-1);
-						//if(ii==ny.index)
-							//continue;
-						if(ny.z!=-1){
-							if(ny.z==1)
-								debug("multiple intersections");
-							if(ny.z>1)
-								err("too many intersections:( (not convex?)",pexit);
-						
-							if(last.z!=-2){
-								/*
-								if(last.y>ny.y&&last.x>ny.x&&0){
-									cord tem = ny;
-									ny = last;
-									last = tem;
-									//printf("sw\n");
-								}*/
-								float c_r = 1.0f;
-								float c_g = 1.0f;
-								float c_b = 1.0f;
-								//int zzz = 0;
-								//printf("%i %i\n",last.index,ny.index);
-								for(int zz = last.index+1; zz<=ny.index;
-										zz++){
-									//printf("aa\n");
-									//printf("zzz %lu\n",sizeof * neww[neww_l]->pix* 4 * (neww[neww_l]->len+1));
-									neww[neww_l]->pix = realloc(neww[neww_l]->pix,
-											sizeof * neww[neww_l]->pix* 4 * (neww[neww_l]->len+1));
-									neww[neww_l]->col = realloc(neww[neww_l]->col,
-											sizeof * neww[neww_l]->col* 4 * (neww[neww_l]->len+1));
-									neww[neww_l]->pix[neww[neww_l]->len*2] = con[z]->pix[zz*2]; 
-									neww[neww_l]->pix[neww[neww_l]->len*2+1] = con[z]->pix[zz*2+1];
-									neww[neww_l]->col[neww[neww_l]->len*3] = con[z]->col[zz*3];
-									neww[neww_l]->col[neww[neww_l]->len*3+1] = con[z]->col[zz*3+1];
-									neww[neww_l]->col[neww[neww_l]->len*3+2] = con[z]->col[zz*3+2];
-									neww[neww_l]->len++;
-									
-									//zzz++;
-									
-									/*		
-									con[z]->col[zz*3] = 1.0f;	
-									con[z]->col[zz*3+1] = 0.0f;
-									con[z]->col[zz*3+2] = 0.0f;
-									*/
-								}
-								
-								neww[neww_l]->pix = realloc(neww[neww_l]->pix,
-											sizeof * neww[neww_l]->pix* 4 * (neww[neww_l]->len+1));
-								neww[neww_l]->col = realloc(neww[neww_l]->col,
-											sizeof * neww[neww_l]->col* 4 * (neww[neww_l]->len+1));
-								neww[neww_l]->pix[neww[neww_l]->len*2] = last.x; 
-								neww[neww_l]->pix[neww[neww_l]->len*2+1] = last.y;
-								neww[neww_l]->col[neww[neww_l]->len*3] = con[z]->col[ny.index*3];
-								neww[neww_l]->col[neww[neww_l]->len*3+1] = con[z]->col[ny.index*3+1];
-								neww[neww_l]->col[neww[neww_l]->len*3+2] = con[z]->col[ny.index*3+2];
-								neww[neww_l]->len++;
-								double zzzz = 77777.0;
-								cord aa = poi_d(con[i]->pix[(lali+1)*2],con[i]->pix[(lali+1)*2+1],zzzz,con[i]->pix[(lali+1)*2+1],con[z]->len,con[z]->pix,0,-1);
-								cord bb = poi_d(con[i]->pix[(lali+1)*2],con[i]->pix[(lali+1)*2+1],-zzzz,con[i]->pix[(lali+1)*2+1],con[z]->len,con[z]->pix,0,-1);
-								//if(aa.z==-1||bb.z==-1)
-							//		printf("AAA\n");
-								int tes = aa.z==-1||bb.z==-1;
-								//printf("%f %f\n",aa.z,bb.z);
-								if(tes){
-								for(int zz = lali; zz!=ii;
-										zz--){
-									
-									neww[neww_l]->pix = realloc(neww[neww_l]->pix,
-											sizeof * neww[neww_l]->pix* 4 * (neww[neww_l]->len+1));
-									neww[neww_l]->col = realloc(neww[neww_l]->col,
-											sizeof * neww[neww_l]->col* 4 * (neww[neww_l]->len+1));
-									neww[neww_l]->pix[neww[neww_l]->len*2] = con[i]->pix[zz*2]; 
-									neww[neww_l]->pix[neww[neww_l]->len*2+1] = con[i]->pix[zz*2+1];
-									neww[neww_l]->col[neww[neww_l]->len*3] = con[i]->col[zz*3];
-									neww[neww_l]->col[neww[neww_l]->len*3+1] = con[i]->col[zz*3+1];
-									neww[neww_l]->col[neww[neww_l]->len*3+2] = con[i]->col[zz*3+2];
-									neww[neww_l]->len++;
-									if(zz==0)
-										zz=o_c;
-									//zzz++;
-									
-									/*
-									con[i]->col[zz*3] = 1.0f;	
-									con[i]->col[zz*3+1] = 0.0f;
-									con[i]->col[zz*3+2] = 0.0f;
-									*/	
-								}
-								} else {
-								for(int zz = lali+1; zz<=ii;
-										zz++){
-									
-									neww[neww_l]->pix = realloc(neww[neww_l]->pix,
-											sizeof * neww[neww_l]->pix* 4 * (neww[neww_l]->len+1));
-									neww[neww_l]->col = realloc(neww[neww_l]->col,
-											sizeof * neww[neww_l]->col* 4 * (neww[neww_l]->len+1));
-									neww[neww_l]->pix[neww[neww_l]->len*2] = con[i]->pix[zz*2]; 
-									neww[neww_l]->pix[neww[neww_l]->len*2+1] = con[i]->pix[zz*2+1];
-									neww[neww_l]->col[neww[neww_l]->len*3] = con[i]->col[zz*3];
-									neww[neww_l]->col[neww[neww_l]->len*3+1] = con[i]->col[zz*3+1];
-									neww[neww_l]->col[neww[neww_l]->len*3+2] = con[i]->col[zz*3+2];
-									neww[neww_l]->len++;
-									
-									//zzz++;
-									
-									/*
-									con[i]->col[zz*3] = 1.0f;	
-									con[i]->col[zz*3+1] = 0.0f;
-									con[i]->col[zz*3+2] = 0.0f;
-									*/	
-								}
-								}
-								
-								neww[neww_l]->pix = realloc(neww[neww_l]->pix,
-											sizeof * neww[neww_l]->pix* 4 * (neww[neww_l]->len+1));
-								neww[neww_l]->col = realloc(neww[neww_l]->col,
-											sizeof * neww[neww_l]->col* 4 * (neww[neww_l]->len+1));
-								neww[neww_l]->pix[neww[neww_l]->len*2] = ny.x; 
-								neww[neww_l]->pix[neww[neww_l]->len*2+1] = ny.y;
-								neww[neww_l]->col[neww[neww_l]->len*3] = con[z]->col[last.index*3];
-								neww[neww_l]->col[neww[neww_l]->len*3+1] = con[z]->col[last.index*3+1];
-								neww[neww_l]->col[neww[neww_l]->len*3+2] = con[z]->col[last.index*3+2];
-								neww[neww_l]->len++;
-								//zzz++;
-							
-								neww[neww_l]->pix = realloc(neww[neww_l]->pix,
-											sizeof * neww[neww_l]->pix* 4 * (neww[neww_l]->len+1));
-								neww[neww_l]->col = realloc(neww[neww_l]->col,
-											sizeof * neww[neww_l]->col* 4 * (neww[neww_l]->len+1));
-								neww[neww_l]->pix[neww[neww_l]->len*2] = neww[neww_l]->pix[0];
-								neww[neww_l]->pix[neww[neww_l]->len*2+1] = neww[neww_l]->pix[1];
-								neww[neww_l]->col[neww[neww_l]->len*3] = neww[neww_l]->col[0];
-								neww[neww_l]->col[neww[neww_l]->len*3+1] = neww[neww_l]->col[1];
-								neww[neww_l]->col[neww[neww_l]->len*3+2] = neww[neww_l]->col[2];
-								neww[neww_l]->len++;
-							
-								//last.z = -2;
-							//lali = -2;
-							}
-							
-							lali = ii;
-							last = ny;	
-						}
-
-					}
-				neww_l++;
-				}
-					
-			}
-		}
+		//TODO: HERE
+		glfl_ar** neww = transp(con,aaaa->len);
+		
+		//printf("end\n");
+		//glfl_ar** neww2 = transp(neww,neww[0]->lin-1);
+		int neww_l = neww[0]->lin;
+		//printf("%i\n",neww_l);
 		//abort();
 		
 		glfl_ar* push = con[0];
@@ -1333,32 +1430,41 @@ int main(int argc,char*argv[]){
 		free(con[0]->trans);
 		free(con[0]);
 		free(con);
-		
+		//printf("pre %i\n",neww_l);
 		for(int i = 0; i<=neww_l-1; i++){
+			
 			int tee = i;
 			//printf("%i\n",neww[tee]->len);
+			//printf("b\n");
 			glfl_ar* ttee = poly_to_tri(neww[tee]->pix,neww[tee]->col, neww[tee]->len);
+			
 			neww[tee]->tri = ttee->tri;
 			for(int z = 0; z<=neww[tee]->len*3; z++)
-				neww[tee]->col[z] = 0.5f;
-			for(int z = 0; z<=ttee->tlen*12; z++)
-				ttee->tricol[z] = 1.0f;
+				neww[tee]->col[z] = 1.0f;
+			//for(int z = 0; z<=ttee->tlen*12; z++)
+			//	ttee->tricol[z] = 1.0f;
 			neww[tee]->tricol=ttee->tricol;
 			neww[tee]->tlen = ttee->tlen;
-			//render_p(neww[tee],0);
-			neww[tee]->len = 0;
+			//printf("a\n");
+			render_p(neww[tee],0);
+			//printf("a2\n");
+			//neww[tee]->len = 0;
 			// add trans
 			render_p(neww[tee],1);
 			free(neww[tee]->tri);
 			free(neww[tee]->tricol);
 			free(ttee);
+			
 			free(neww[i]->col);
 			free(neww[i]->pix);
+			//printf("a3 %i\n",i);
 			free(neww[i]);
+			//printf("a4\n");
 			//break;
 		}
-		free(neww);
-		
+		//printf("a5\n");
+		free(neww);	
+		//printf("df\n");
 		//free(bba->tricol);
 		//free(bba->tri);
 		//free(bba->trans);
