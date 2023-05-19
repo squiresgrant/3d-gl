@@ -6,11 +6,13 @@
 #include "util.h"
 #include <unistd.h>
 #include <time.h>
-
+int NNNN = 0;
 typedef struct {
   double x;
   double y;
   double z;
+	double slope1;
+	double slope2;
   int vertex;
 	int index;
 } cord;
@@ -55,6 +57,7 @@ cord poi_d(double x1,double y1,double x2, double y2,int len,GLfloat* pixels,int 
 		if(isnan(nsx)||isnan(nsy)||!(0<=s&&1>=s&&0<=t&&1>=t))
 			continue;
 		//printf("%f %f, %f %f | (%f,%f),(%f,%f)\n",nsx,nsy,nsx2,nsy2,x1,y1,x2,y2);		
+		//printf("%f %f\n",s,t);
 		if(!(nsx>=lesser(x1,x2)&&nsx<=greater(x2,x1)&&nsy>=lesser(y1,y2)&&nsy<=greater(y2,y1))||(diff(nsx,x1)<FL_DIS&&diff(nsy,y1)<FL_DIS))
 			continue;
 		//printf("aaa\n");
@@ -62,6 +65,8 @@ cord poi_d(double x1,double y1,double x2, double y2,int len,GLfloat* pixels,int 
 		if(aa.z==-1||pow(nsx-x1,2)+pow(nsy-y1,2)<pow(aa.x-x1,2)+pow(aa.y-y1,2)){
 			aa.x = nsx;
 			aa.y = nsy;
+			aa.slope1 = s;
+			aa.slope2 = t;
 			aa.index = yyu;	
 		}
 		aa.z++;
@@ -564,14 +569,14 @@ glfl_ar* poly_to_tri(GLfloat* pixels,GLfloat* colors,int fc_len){
 glfl_ar** transp(glfl_ar** con,int lle){
 	int o_a_len = lle;
 	int aal[o_a_len];
-	glfl_ar** neww = malloc(sizeof ** neww * lle * 40);
+	glfl_ar** neww = malloc(sizeof ** neww * lle * 80);
 		int neww_l = 0;
 		for(int i = 0; i<=o_a_len-1; i++)
 			aal[i] = con[i]->len;
 		float b_r = 0.0f;
 		float b_g = 0.0f;
 		float b_b = 0.0f;
-		for(int i = 0; i<=o_a_len-1; i++){
+		for(int i = 0; 0&&i<=o_a_len-1; i++){
 			for(int ii = 0; ii<=con[i]->len; ii++){
 				con[i]->col[ii*3] = (con[i]->col[ii*3] + b_r)/2;
 				con[i]->col[ii*3+1] = (con[i]->col[ii*3+1] + b_g)/2;
@@ -589,6 +594,7 @@ glfl_ar** transp(glfl_ar** con,int lle){
 		//printf("s\n");
 		//printf("---\n");
 		for(int i = o_a_len-1; i>=0; i--){
+			
 			for(int z = o_a_len-1; z>=0; z--){
 				if(i!=z){
 					//printf("a\n");
@@ -598,6 +604,7 @@ glfl_ar** transp(glfl_ar** con,int lle){
 					//printf("b\n");
 					if(con[i]->max.x>=con[z]->max.x&&con[i]->min.x<=con[z]->min.x&&
 							con[i]->max.y>=con[z]->max.y&&con[i]->min.y<=con[z]->min.y){
+						//continue;
 						//printf("c\n");
 						//neww = realloc(neww,sizeof ** neww * (neww_l + 2));
 						neww[neww_l] = malloc(sizeof * neww[neww_l] * (1 + con[i]->len + con[z]->len) * 40);
@@ -606,7 +613,7 @@ glfl_ar** transp(glfl_ar** con,int lle){
 						for(int zz = 0; zz<=aal[z]; zz++){
 									neww[neww_l]->pix[zz*2] = con[z]->pix[zz*2];	
 									neww[neww_l]->pix[zz*2+1] = con[z]->pix[zz*2+1];
-									
+									//printf("%f %f\n",con[z]->pix[zz*2+1],con[z]->pix[zz*2]);				
 									neww[neww_l]->col[zz*3] = c_r;	
 									neww[neww_l]->col[zz*3+1] = c_g;
 									neww[neww_l]->col[zz*3+2] = c_b;
@@ -629,12 +636,24 @@ glfl_ar** transp(glfl_ar** con,int lle){
 					int lali = -2;
 					//neww = realloc(neww,sizeof ** neww * (neww_l + 2));
 					neww[neww_l] = malloc(sizeof * neww[neww_l]* 90);
-					neww[neww_l]->pix = malloc(sizeof * neww[neww_l]->pix* 4);
-					neww[neww_l]->col = malloc(sizeof * neww[neww_l]->col* 4);
+					neww[neww_l]->pix = malloc(sizeof * neww[neww_l]->pix* 8);
+					neww[neww_l]->col = malloc(sizeof * neww[neww_l]->col* 8);
 					neww[neww_l]->len = 0;
 					neww[neww_l]->tlen = 0;
+					//neww[neww_l]->max = con[i]->max;
+					//neww[neww_l]->min = con[i]->min;
+					neww[neww_l]->max.index = -INFINITY;
+					neww[neww_l]->max.vertex = -INFINITY;
+					neww[neww_l]->max.x = -INFINITY;
+					neww[neww_l]->max.y = -INFINITY;
+					
+					neww[neww_l]->min.index = INFINITY;
+					neww[neww_l]->min.vertex = INFINITY;
+					neww[neww_l]->min.x = INFINITY;
+					neww[neww_l]->min.y = INFINITY;
 					//printf("d\n");
 					for(int ii = 0; ii<=o_c-2; ii++){
+						
 						//printf("e\n");
 						//printf("%f %f -> %f %f | %i\n",con[i]->pix[ii*2],con[i]->pix[ii*2+1]
 					//			,con[i]->pix[(ii+1)*2],con[i]->pix[(ii+1)*2+1],aal[z]);
@@ -651,14 +670,19 @@ glfl_ar** transp(glfl_ar** con,int lle){
 								cord tesm = poi_d(con[i]->pix[ii*2],con[i]->pix[ii*2+1]
 								,con[i]->pix[(ii+1)*2],con[i]->pix[(ii+1)*2+1],aal[z],con[z]->pix,0,ny.index);	
 								//printf("%i %f\n",tesm.index,tesm.z);
-								last = ny;
-								ny = tesm;
+								last = tesm;
+								//ny = tesm;
 								lali=ii;
 								//continue;	
 							}
-							if(ny.z>1)
-								err("too many intersections:( (not convex?)",pexit);
-						
+							else if(ny.z>1){
+								//ny = poi_d(con[i]->pix[ii*2],con[i]->pix[ii*2+1]
+								//,con[i]->pix[(ii+1)*2],con[i]->pix[(ii+1)*2+1],aal[z],con[z]->pix,0,-1);
+								//printf("%f %f, %f %f, %f %f\n",ny.x,ny.y,con[i]->pix[ii*2],con[i]->pix[ii*2+1]
+								//,con[i]->pix[(ii+1)*2],con[i]->pix[(ii+1)*2+1]);
+								//warn("too many intersections:( (not convex?)");
+								break;	
+							}	
 							if(last.z!=-2){
 								/*
 								if(last.y>ny.y&&last.x>ny.x&&0){
@@ -669,6 +693,7 @@ glfl_ar** transp(glfl_ar** con,int lle){
 								}*/
 								
 								//int zzz = 0;
+								//printf("g\n");
 								//printf("%i,%i | %i %i\n",lali,ii,last.index,ny.index);
 								double zzzz = 77777.0;
 								cord aa = poi_d(con[i]->pix[(lali+1)*2],con[i]->pix[(lali+1)*2+1],zzzz,con[i]->pix[(lali+1)*2+1],con[z]->len,con[z]->pix,0,-1);
@@ -699,10 +724,12 @@ glfl_ar** transp(glfl_ar** con,int lle){
 								neww[neww_l]->len++;
 								
 								//printf("%i %i | %i %i, %i %i\n",neww_l,tes,lali,ii,last.index,ny.index);
+								
 								if(!tes2){
 								//printf("%i %i %i\n",neww_l,last.index,ny.index);
 								for(int zz = last.index+1; zz<=ny.index;
 										zz++){
+									
 									//printf("aa\n");
 									//printf("zzz %lu\n",sizeof * neww[neww_l]->pix* 4 * (neww[neww_l]->len+1));
 									neww[neww_l]->pix = realloc(neww[neww_l]->pix,
@@ -726,11 +753,12 @@ glfl_ar** transp(glfl_ar** con,int lle){
 								} 
 								
 								} else {
-									
-									//printf("%i | %i %i\n",neww_l,last.index,ny.index);	
+									//if(neww_l==3)printf("T\n");
+									//printf("%i | %i %i\n",o_c,last.index,ny.index);	
+									//if(ny.index<o_c)
 									for(int zz = last.index; zz!=ny.index;
 										zz--){
-									//printf("%i, %i / %i / %i\n",neww_l,zz,last.index,o_c);
+									//printf("%i, %i / %i / %i\n",neww_l,zz,ny.index,o_c);
 										//printf("aa\n");
 									//printf("zzz %lu\n",sizeof * neww[neww_l]->pix* 4 * (neww[neww_l]->len+1));
 									neww[neww_l]->pix = realloc(neww[neww_l]->pix,
@@ -746,7 +774,7 @@ glfl_ar** transp(glfl_ar** con,int lle){
 									//printf("%i\n",zz);
 									//break;
 									if(zz<=0){
-										if(0&&o_c-1==zz)
+										if(o_c<=ny.index)
 											break;
 										else
 											zz=o_c;
@@ -777,6 +805,7 @@ glfl_ar** transp(glfl_ar** con,int lle){
 								
 								if(tes){
 								//printf("%i %i %i\n",neww_l,lali,ii);
+									
 									for(int zz = ii+1; zz!=lali+1;
 										zz++){
 									
@@ -847,16 +876,32 @@ glfl_ar** transp(glfl_ar** con,int lle){
 							lali = ii;
 							last = ny;	
 						}
-
+						//printf("oo\n");
 					}
 				neww_l++;
 				}
 					
 			}
 		}
-		//printf("---\n");
-	for(int i = 0; i<=neww_l-1;i++)
+		//printf("ee ---\n");
+	for(int i = 0; i<=neww_l-1;i++){
+		//neww[i]->max.x = neww[i]->pix[2];
+		//neww[i]->max.y = neww[i]->pix[3];	
+		
+		//neww[i]->min.x = neww[i]->pix[2];
+		//neww[i]->min.y = neww[i]->pix[3];
+		for(int z = 0; z<=neww[i]->len-1; z++){
+			//printf("%i %i, %f %f\n",i,z,neww[i]->pix[z*2],neww[i]->pix[z*2+1]);
+			neww[i]->max.x = greater(neww[i]->max.x,neww[i]->pix[z*2]);
+			neww[i]->max.y = greater(neww[i]->max.y,neww[i]->pix[z*2+1]);	
+		
+			neww[i]->min.x = lesser(neww[i]->min.x,neww[i]->pix[z*2]);
+			neww[i]->min.y = lesser(neww[i]->min.y,neww[i]->pix[z*2+1]);
+		}
+
+		//printf("	--	%f %f\n",neww[i]->max.x,neww[i]->min.x);
 		neww[i]->lin = neww_l;
+	}
 	return neww;
 }
 glfl_ar* perspective_proj(GLFWwindow* b,point_arr* c,double ctx,double cty,double ctz,double cx, double cy, double cz){ 
@@ -1403,10 +1448,21 @@ int main(int argc,char*argv[]){
 		//printf("---\n");
 		//TODO: HERE
 		glfl_ar** neww = transp(con,aaaa->len);
-		
+		//for(int i = 0; i!=neww2[0]->lin-1;i++)
+		//	printf("%i\n",neww2[i]->len);
+		//glfl_ar** neww2 = transp(con,aaaa->len);
+
 		//printf("end\n");
-		//glfl_ar** neww2 = transp(neww,neww[0]->lin-1);
+		//printf("%f %f %f %f\n",neww)
+		//printf("--- %i\n",neww2[0]->lin);
+		glfl_ar** neww2 = transp(neww,neww[0]->lin);
+		//for(int i = 0; i!=neww[0]->lin-1;i++)
+		//printf("%i\n",neww[0]->len);
+		//printf("e\n");
+		//for(int i = 0; i!=neww2[0]->lin; i++)
+			//printf("%f %f %f\n",neww2[i])
 		int neww_l = neww[0]->lin;
+		int neww_l2 = neww2[0]->lin;
 		//printf("%i\n",neww_l);
 		//abort();
 		
@@ -1431,36 +1487,37 @@ int main(int argc,char*argv[]){
 		free(con[0]);
 		free(con);
 		//printf("pre %i\n",neww_l);
+		for(int i = 0; i<=neww_l2-1; i++){
+			free(neww2[i]->col);
+			free(neww2[i]->pix);	
+			free(neww2[i]);
+		}
+		//printf("a5\n");
+		free(neww2);
 		for(int i = 0; i<=neww_l-1; i++){
-			
+			for(int z = 0; z<=neww[i]->len-1;z++){
+				//printf("%i | %f %f\n",neww[i]->len,neww[i]->pix[z*2],neww[i]->pix[z*2+1]);
+			}
+			if(i!=-9&&neww[i]->len>0){
 			int tee = i;
-			//printf("%i\n",neww[tee]->len);
-			//printf("b\n");
 			glfl_ar* ttee = poly_to_tri(neww[tee]->pix,neww[tee]->col, neww[tee]->len);
-			
+
 			neww[tee]->tri = ttee->tri;
 			for(int z = 0; z<=neww[tee]->len*3; z++)
-				neww[tee]->col[z] = 1.0f;
-			//for(int z = 0; z<=ttee->tlen*12; z++)
-			//	ttee->tricol[z] = 1.0f;
+				neww[tee]->col[z] = 0.5f;	
 			neww[tee]->tricol=ttee->tricol;
-			neww[tee]->tlen = ttee->tlen;
-			//printf("a\n");
+			neww[tee]->tlen = ttee->tlen;	
 			render_p(neww[tee],0);
-			//printf("a2\n");
-			//neww[tee]->len = 0;
-			// add trans
+			
 			render_p(neww[tee],1);
 			free(neww[tee]->tri);
 			free(neww[tee]->tricol);
 			free(ttee);
-			
+			}
 			free(neww[i]->col);
-			free(neww[i]->pix);
-			//printf("a3 %i\n",i);
+			free(neww[i]->pix);	
 			free(neww[i]);
-			//printf("a4\n");
-			//break;
+			
 		}
 		//printf("a5\n");
 		free(neww);	
@@ -1546,6 +1603,14 @@ int main(int argc,char*argv[]){
       pl_x+=cosf((half_max_r+plr_y)*0.01)*mul;
       pl_y+=sinf((half_max_r+plr_y)*0.01)*mul; 
     }
+		if(glfwGetKey(w,GLFW_KEY_N)){
+			NNNN--;
+			printf("%i\n",NNNN);
+		}
+		if(glfwGetKey(w,GLFW_KEY_M)){
+			NNNN++;
+			printf("%i\n",NNNN);
+		}	
     if(glfwWindowShouldClose(w)||(glfwGetKey(w,GLFW_KEY_Q)))break; 
 		 
 		if(1){

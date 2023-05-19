@@ -15,7 +15,7 @@ typedef struct {
 	unsigned long size;
 } alloc;
 alloc* allocations = NULL;
-double binomial(int n, int k){
+inline double binomial(int n, int k){
   if(n==k)
     return 1.0;
   double v = 1.0; 
@@ -24,10 +24,10 @@ double binomial(int n, int k){
   } 
   return v;
 }
-void* mmalloc(size_t X,char*file,int line,char*func){
+inline void* mmalloc(size_t X,char*file,int line,char*func){
 	void* mal = (malloc)(X);
 	if(mal==NULL)
-		abort();
+		err_m("malloc error",exit,file,line); //abort();
 	#ifdef memory_trace
 	if(allocations==NULL){
 		allocations=(malloc)(sizeof(*allocations)*2);
@@ -48,9 +48,9 @@ void* mmalloc(size_t X,char*file,int line,char*func){
 	
 }
 
-void ffree(void* X,char*file,int line,char*func){
+inline void ffree(void* X,char*file,int line,char*func){
 	if(X==NULL){
-		warn("tried to free a null pointer");
+		warn_m("tried to free a null pointer",file,line);
 		return;	
 	}
 	#ifdef memory_trace	
@@ -125,11 +125,11 @@ unsigned int_len(const unsigned n) {
     return 1 + int_len(n / 10);
 }//https://stackoverflow.com/a/3068415
 char* force_ca_length(char*inp,int len){
-  char* nya = malloc(sizeof(*nya)*(len+1));
+  char* nya = malloc(sizeof(*nya)*(len+2));
   int skip = 0;
   for(int i = 0;; i++){
     nya[i] = ' ';
-    if((inp[i]=='\0'||skip)&&i>=len)
+    if((skip||inp[i]=='\0')&&i>=len)
       break;
     if(inp[i]=='\0')
       skip=1;
