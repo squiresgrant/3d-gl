@@ -15,7 +15,7 @@ typedef struct {
 	unsigned long size;
 } alloc;
 alloc* allocations = NULL;
-inline double binomial(int n, int k){
+inline const double binomial(int n, int k){
   if(n==k)
     return 1.0;
   double v = 1.0; 
@@ -24,7 +24,7 @@ inline double binomial(int n, int k){
   } 
   return v;
 }
-inline void* mmalloc(size_t X,char*file,int line,char*func){
+void* mmalloc(size_t X,char*file,int line,char*func){
 	void* mal = (malloc)(X);
 	if(mal==NULL)
 		err_m("malloc error",exit,file,line); //abort();

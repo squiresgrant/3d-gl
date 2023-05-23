@@ -41,7 +41,7 @@ static const int forced_length = 20;
 #define logm(s){};
 #endif 
 
-double binomial(int n, int k);
+const double binomial(int n, int k);
 void* mmalloc(size_t,char*,int,char*);
 void ffree(void*,char*,int,char*);
 void err_m(char*,void (*)(int),char*,int);
