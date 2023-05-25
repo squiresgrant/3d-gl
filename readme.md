@@ -1,3 +1,4 @@
+wanted to learn about 3d rendering and how rendering engines work at the lower levels
 
 optimized build : `clang ./src/*.c -lm -lglfw -lGL -lGLEW -fno-trapping-math -ffast-math`
 
