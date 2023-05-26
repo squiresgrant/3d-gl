@@ -4,6 +4,7 @@
 #include <math.h>
 #include "glfww.h"
 #include "util.h"
+#include "shader.h"
 #include <unistd.h>
 #include <time.h>
 int NNNN = 0;
@@ -105,24 +106,6 @@ typedef struct {
   int len;
 } glfl_m;
 GLuint prog;
-static const char* vshader_src = 
-  "#version 330\n"
-  "layout (location = 0) in vec3 pos;\n"
-  "layout (location = 1) in vec3 color;\n" 
-	"out vec3 ncolor;\n"
-	"void main(){\n"
-  "ncolor = color;\n"
-	"gl_Position = vec4(pos,1.0);\n" 
-  "};";
-static const char* fshader_src = 
-  "#version 330\n"
-  "in vec3 ncolor;\n"
-	"out vec4 color;\n"
-  "void main(){\n"
-  //"gl_FragColor = vec4(1.0,0.0,1.0,1.0);\n"
-  "gl_FragColor = vec4(ncolor,1.0);\n"
-	"};";
-
 point_arr* basier2d(double*xx,double*yy,int n,float rr, float gg, float bb){ 
   
   n-=1;
@@ -1547,6 +1530,32 @@ int main(int argc,char*argv[]){
 		for(int i = 0; i<=aaaa->len-1; i++)
 			printf("%f %f %f\n",con[i]->avg.z,con[i]->max.z,con[i]->min.z);
 		*/
+		printf("---\n");
+		for(int i = 0; i<=aaaa->len-2;i++){
+			
+			double maxi = -INFINITY;
+			for(int p = 0; p<=con[i]->len-1; p++){
+				double mma = 77777;
+				cord aa = poi_d(con[i]->pix[p*2],con[i]->pix[p*2+1],mma,con[i]->pix[p*2+1],con[i+1]->len,con[i+1]->pix,0,-1);
+				cord bb = poi_d(con[i]->pix[p*2],con[i]->pix[p*2+1],-mma,con[i]->pix[p*2+1],con[i+1]->len,con[i+1]->pix,0,-1);
+				//printf("%f\n",aa.z);
+				if(aa.z!=-1&&bb.z!=-1)
+					maxi = greater(maxi,con[i]->dep[p]);
+			}
+			printf("%i %f\n",i,maxi);
+			if(//(maxi>con[i+1]->min.z&&maxi<con[i+1]->max.z&&!(con[i]->max.z<con[i+1]->max.z&&con[i]->min.z>con[i+1]->min.z))
+					//(maxi>con[i+1]->max.z&&con[i]->min.z<con[i+1]->max.z)
+					//((maxi>con[i+1]->min.z&&maxi<con[i+1]->max.z&&(con[i]->max.z>con[i+1]->max.z))
+					// ||(con[i]->max.z>con[i+1]->max.z&&con[i]->min.z>con[i+1]->min.z))
+					maxi>con[i+1]->max.z
+					&&isinf(maxi)==0){
+				glfl_ar* tempp = con[i];	
+				con[i] = con[i+1];	
+				con[i+1] = tempp;	
+
+				i=-1;
+			}
+		}
 		//printf("---\n");
 		//TODO: HERE
 		
@@ -1623,7 +1632,7 @@ int main(int argc,char*argv[]){
 			neww[tee]->tlen = ttee->tlen;	
 			//render_p(neww[tee],0);
 			
-			render_p(neww[tee],1);
+			//render_p(neww[tee],1);
 			free(neww[tee]->tri);
 			free(neww[tee]->tricol);
 			free(ttee);

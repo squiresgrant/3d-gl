@@ -17,9 +17,7 @@
   glBegin(GL_POINTS);\
   glfw_pixel_partial(wi,x,y);\
   glEnd();
-GLuint vshader_comp(const char*);
-GLuint fshader_comp(const char*);
-GLuint build_shader(GLuint, GLuint);
+
 GLFWwindow* glfw_init();
 void glfw_loop(GLFWwindow*);
 int get_h();
