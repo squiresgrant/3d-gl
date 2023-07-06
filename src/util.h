@@ -6,6 +6,7 @@
 #define __util__
 
 static const double FL_DIS = 1e-7;
+static const double DB_DIS = 1e-6;
 static const double NaN = 0.0f/0.0f;
 static const int forced_length = 20;
 

@@ -106,8 +106,9 @@ void sig_handle(void){
 		#endif
 		
   }
-	if(allocs==frees)
-    info("even allocations, no internal leaks");
+	//if(allocs==frees)
+	else
+		info("even allocations, no internal leaks");
 	if(allocations!=NULL)
 		(free)(allocations); 
 	#endif
