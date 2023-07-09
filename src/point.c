@@ -981,6 +981,99 @@ glfl_ar** transp(glfl_ar** con,int lle){
 	}
 	return neww;
 }
+void sort_polygons(point_m* aaaa, glfl_ar** con){
+	for(int i = 0; i<=aaaa->len-2;i++){
+			//printf("a\n");
+			//double maxi = -INFINITY;
+			int su = -1;
+			for(int p = 0; p<=con[i]->len-2; p++){
+				
+				//if(su!=-1)
+				//	printf("%i\n",su);
+				double mma = 77777;
+				cord aa = poi_d(con[i]->pix[p*2],con[i]->pix[p*2+1],con[i]->pix[(p+1)*2],con[i]->pix[(p+1)*2+1],con[i+1]->len,con[i+1]->pix,0,-1,su);
+				//cord cc = poi_d(con[i]->pix[p*2],con[i]->pix[p*2+1],mma,con[i]->pix[p*2+1],con[i+1]->len,con[i+1]->pix,0,-1);
+				//cord bb = poi_d(con[i]->pix[p*2],con[i]->pix[p*2+1],-mma,con[i]->pix[p*2+1],con[i+1]->len,con[i+1]->pix,0,-1);
+				//printf("%f\n",aa.z);
+				if(aa.z!=-1){
+					
+					double l1x1 = con[i]->pix[p*2];
+					double l1y1 = con[i]->pix[p*2+1];
+					double l1z1 = con[i]->dep[p];
+
+					double l1x2 = con[i]->pix[(p+1)*2];
+					double l1y2 = con[i]->pix[(p+1)*2+1];
+					double l1z2 = con[i]->dep[p+1];
+					
+					double l2x1 = con[i+1]->pix[(aa.index)*2];
+					double l2y1 = con[i+1]->pix[(aa.index)*2+1];
+					double l2z1 = con[i+1]->dep[(aa.index)];
+
+					double l2x2 = con[i+1]->pix[(aa.index+1)*2];
+					double l2y2 = con[i+1]->pix[(aa.index+1)*2+1];
+					double l2z2 = con[i+1]->dep[(aa.index+1)];
+					if(!point_on_line(aa.x,aa.y,l2x1,l2y1,l2x2,l2y2))
+						abort();
+					double lz1 = find_z(l1x1,l1y1,l1z1,l1x2,l1y2,l1z2,aa.x,aa.y);
+					double lz2 = find_z(l2x1,l2y1,l2z1,l2x2,l2y2,l2z2,aa.x,aa.y);
+					//printf("(%.2f,%.2f,%.2f)->(%.2f,%.2f,%.2f) & (%.2f,%.2f,%.2f)->(%.2f,%.2f,%.2f) cross at (%.2f,%f) w/ (%.2f,%.2f)\n"
+					//		,l1x1,l1y1,l1z1,l1x2,l1y2,l1z2,
+					//		l2x1,l2y1,l2z1,l2x2,l2y2,l2z2, aa.x, aa.y,lz1,lz2);
+					//printf("%f %f > %f %f\n",lz1,lz2,diff(lz1,lz2),FL_DIS);
+					if(lz1<lz2&&(diff(lz1,lz2)>DB_DIS)){
+						//printf("%f %f > %f %f\n",lz1,lz2,diff(lz1,lz2),FL_DIS);					
+						//printf("sw, %.2f,%.2f,%.2f -> %.2f,%.2f,%.2f\n",con[i]->col[0],con[i]->col[1],con[i]->col[2],
+						//		con[i+1]->col[0],con[i+1]->col[1],con[i+1]->col[2]);
+						glfl_ar* tempp = con[i];	
+						con[i] = con[i+1];	
+						con[i+1] = tempp;	
+
+						i=-1;
+						break;
+					}
+					//su = aa.index+1;
+					//p--;
+					//maxi = greater(maxi,con[i]->dep[p]);
+					//double sl1 = (con[i]->dep[p+1] - con[i]->dep[p])/(con[i]->pix[(p+1)*2] - con[i]->pix[p*2]);
+					//double nz1  = con[i]->dep[p] + sl1 * (aa.x - con[i]->pix[(p*2)]) + sl1 * (aa.y - con[i]->pix[(p*2+1)]);
+					
+					//double sl2 = (con[i+1]->dep[aa.index+1] - con[i+1]->dep[aa.index])/(con[i+1]->pix[(aa.index+1)*2] - con[i+1]->pix[aa.index*2]);
+					//double nz2  = con[i+1]->dep[aa.index] + sl2 * (aa.x - con[i+1]->pix[(aa.index*2)]) + sl2 * (aa.y - con[i+1]->pix[(aa.index*2+1)]);
+					/*double nz1 = linear_interpd(con[i]->pix[p*2],con[i]->pix[p*2+1],con[i]->dep[p],
+							con[i]->pix[(p+1)*2],con[i]->pix[(p+1)*2+1],con[i]->dep[p+1],aa.x,aa.y);
+					double nz2 = linear_interpd(con[i+1]->pix[aa.index*2],con[i+1]->pix[aa.index*2+1],con[i+1]->dep[aa.index],
+							con[i+1]->pix[(aa.index+1)*2],con[i+1]->pix[(aa.index+1)*2+1],con[i+1]->dep[aa.index+1],aa.x,aa.y);
+					printf("%f %f | %i\n",nz1,nz2,aa.index);
+					if(nz1<nz2&&!(isnan(nz1)||isnan(nz2))){
+											
+						glfl_ar* tempp = con[i];	
+						con[i] = con[i+1];	
+						con[i+1] = tempp;	
+
+						i=-1;
+						break;	
+					}*/
+				} 
+				
+			}
+
+			
+			//printf("%i %f\n",i,maxi);
+			/*if(//(maxi>con[i+1]->min.z&&maxi<con[i+1]->max.z&&!(con[i]->max.z<con[i+1]->max.z&&con[i]->min.z>con[i+1]->min.z))
+					//(maxi>con[i+1]->max.z&&con[i]->min.z<con[i+1]->max.z)
+					//((maxi>con[i+1]->min.z&&maxi<con[i+1]->max.z&&(con[i]->max.z>con[i+1]->max.z))
+					// ||(con[i]->max.z>con[i+1]->max.z&&con[i]->min.z>con[i+1]->min.z))
+					maxi>con[i+1]->max.z
+					&&isinf(maxi)==0){
+				glfl_ar* tempp = con[i];	
+				con[i] = con[i+1];	
+				con[i+1] = tempp;	
+
+				i=-1;
+			}
+			*/
+		}
+}
 glfl_ar* perspective_proj(GLFWwindow* b,point_arr* c,double ctx,double cty,double ctz,double cx, double cy, double cz){ 
 
 	GLfloat* pixels = malloc(sizeof(*pixels)*((1+c->len)*3));
@@ -1548,108 +1641,14 @@ int main(int argc,char*argv[]){
 			printf("%f %f %f\n",con[i]->avg.z,con[i]->max.z,con[i]->min.z);
 		*/
 		
-		for(int i = 0; i<=aaaa->len-2;i++){
-			//printf("a\n");
-			//double maxi = -INFINITY;
-			int su = -1;
-			for(int p = 0; p<=con[i]->len-2; p++){
-				
-				//if(su!=-1)
-				//	printf("%i\n",su);
-				double mma = 77777;
-				cord aa = poi_d(con[i]->pix[p*2],con[i]->pix[p*2+1],con[i]->pix[(p+1)*2],con[i]->pix[(p+1)*2+1],con[i+1]->len,con[i+1]->pix,0,-1,su);
-				//cord cc = poi_d(con[i]->pix[p*2],con[i]->pix[p*2+1],mma,con[i]->pix[p*2+1],con[i+1]->len,con[i+1]->pix,0,-1);
-				//cord bb = poi_d(con[i]->pix[p*2],con[i]->pix[p*2+1],-mma,con[i]->pix[p*2+1],con[i+1]->len,con[i+1]->pix,0,-1);
-				//printf("%f\n",aa.z);
-				if(aa.z!=-1){
-					
-					double l1x1 = con[i]->pix[p*2];
-					double l1y1 = con[i]->pix[p*2+1];
-					double l1z1 = con[i]->dep[p];
-
-					double l1x2 = con[i]->pix[(p+1)*2];
-					double l1y2 = con[i]->pix[(p+1)*2+1];
-					double l1z2 = con[i]->dep[p+1];
-					
-					double l2x1 = con[i+1]->pix[(aa.index)*2];
-					double l2y1 = con[i+1]->pix[(aa.index)*2+1];
-					double l2z1 = con[i+1]->dep[(aa.index)];
-
-					double l2x2 = con[i+1]->pix[(aa.index+1)*2];
-					double l2y2 = con[i+1]->pix[(aa.index+1)*2+1];
-					double l2z2 = con[i+1]->dep[(aa.index+1)];
-					if(!point_on_line(aa.x,aa.y,l2x1,l2y1,l2x2,l2y2))
-						abort();
-					double lz1 = find_z(l1x1,l1y1,l1z1,l1x2,l1y2,l1z2,aa.x,aa.y);
-					double lz2 = find_z(l2x1,l2y1,l2z1,l2x2,l2y2,l2z2,aa.x,aa.y);
-					//printf("(%.2f,%.2f,%.2f)->(%.2f,%.2f,%.2f) & (%.2f,%.2f,%.2f)->(%.2f,%.2f,%.2f) cross at (%.2f,%f) w/ (%.2f,%.2f)\n"
-					//		,l1x1,l1y1,l1z1,l1x2,l1y2,l1z2,
-					//		l2x1,l2y1,l2z1,l2x2,l2y2,l2z2, aa.x, aa.y,lz1,lz2);
-					//printf("%f %f > %f %f\n",lz1,lz2,diff(lz1,lz2),FL_DIS);
-					if(lz1<lz2&&(diff(lz1,lz2)>DB_DIS)){
-						//printf("%f %f > %f %f\n",lz1,lz2,diff(lz1,lz2),FL_DIS);					
-						//printf("sw, %.2f,%.2f,%.2f -> %.2f,%.2f,%.2f\n",con[i]->col[0],con[i]->col[1],con[i]->col[2],
-						//		con[i+1]->col[0],con[i+1]->col[1],con[i+1]->col[2]);
-						glfl_ar* tempp = con[i];	
-						con[i] = con[i+1];	
-						con[i+1] = tempp;	
-
-						i=-1;
-						break;
-					}
-					//su = aa.index+1;
-					//p--;
-					//maxi = greater(maxi,con[i]->dep[p]);
-					//double sl1 = (con[i]->dep[p+1] - con[i]->dep[p])/(con[i]->pix[(p+1)*2] - con[i]->pix[p*2]);
-					//double nz1  = con[i]->dep[p] + sl1 * (aa.x - con[i]->pix[(p*2)]) + sl1 * (aa.y - con[i]->pix[(p*2+1)]);
-					
-					//double sl2 = (con[i+1]->dep[aa.index+1] - con[i+1]->dep[aa.index])/(con[i+1]->pix[(aa.index+1)*2] - con[i+1]->pix[aa.index*2]);
-					//double nz2  = con[i+1]->dep[aa.index] + sl2 * (aa.x - con[i+1]->pix[(aa.index*2)]) + sl2 * (aa.y - con[i+1]->pix[(aa.index*2+1)]);
-					/*double nz1 = linear_interpd(con[i]->pix[p*2],con[i]->pix[p*2+1],con[i]->dep[p],
-							con[i]->pix[(p+1)*2],con[i]->pix[(p+1)*2+1],con[i]->dep[p+1],aa.x,aa.y);
-					double nz2 = linear_interpd(con[i+1]->pix[aa.index*2],con[i+1]->pix[aa.index*2+1],con[i+1]->dep[aa.index],
-							con[i+1]->pix[(aa.index+1)*2],con[i+1]->pix[(aa.index+1)*2+1],con[i+1]->dep[aa.index+1],aa.x,aa.y);
-					printf("%f %f | %i\n",nz1,nz2,aa.index);
-					if(nz1<nz2&&!(isnan(nz1)||isnan(nz2))){
-											
-						glfl_ar* tempp = con[i];	
-						con[i] = con[i+1];	
-						con[i+1] = tempp;	
-
-						i=-1;
-						break;	
-					}*/
-				} 
-				
-			}
-
-			
-			//printf("%i %f\n",i,maxi);
-			/*if(//(maxi>con[i+1]->min.z&&maxi<con[i+1]->max.z&&!(con[i]->max.z<con[i+1]->max.z&&con[i]->min.z>con[i+1]->min.z))
-					//(maxi>con[i+1]->max.z&&con[i]->min.z<con[i+1]->max.z)
-					//((maxi>con[i+1]->min.z&&maxi<con[i+1]->max.z&&(con[i]->max.z>con[i+1]->max.z))
-					// ||(con[i]->max.z>con[i+1]->max.z&&con[i]->min.z>con[i+1]->min.z))
-					maxi>con[i+1]->max.z
-					&&isinf(maxi)==0){
-				glfl_ar* tempp = con[i];	
-				con[i] = con[i+1];	
-				con[i+1] = tempp;	
-
-				i=-1;
-			}
-			*/
-		}
-		
-		//printf("---\n");
-		//TODO: HERE
-		
+		sort_polygons(aaaa,con);
 		//for(int i = 0; i!=aaaa->len-1; i++)
 			//for(int z = 0; z!=con[i]->len-1; z++)
 			//printf("%f\n",con[i]->trans[z]);
-		glfl_ar** neww = transp(con,aaaa->len);
+	//glfl_ar** neww = transp(con,aaaa->len);
 		//for(int i = 0; i!=neww2[0]->lin-1;i++)
 		//	printf("%i\n",neww2[i]->len);
-		glfl_ar** neww2 = transp(neww,neww[0]->lin);
+	//glfl_ar** neww2 = transp(neww,neww[0]->lin);
 		
 		//printf("end\n");
 		//printf("%f %f %f %f\n",neww)
@@ -1660,8 +1659,8 @@ int main(int argc,char*argv[]){
 		//printf("e\n");
 		//for(int i = 0; i!=neww2[0]->lin; i++)
 			//printf("%f %f %f\n",neww2[i])
-		int neww_l = neww[0]->lin;
-		int neww_l2 = neww2[0]->lin;
+	//int neww_l = neww[0]->lin;
+	//int neww_l2 = neww2[0]->lin;
 		//printf("%i\n",neww_l);
 		//abort();
 		
@@ -1688,6 +1687,7 @@ int main(int argc,char*argv[]){
 		free(con[0]);
 		free(con);
 		//printf("pre %i\n",neww_l);
+		/*
 		for(int i = 0; i<=neww_l2-1; i++){
 			free(neww2[i]->col);
 			free(neww2[i]->pix);
@@ -1699,6 +1699,7 @@ int main(int argc,char*argv[]){
 		free(neww2);
 		//*/
 		//printf("%i\n",neww_l);
+		/*
 		for(int i = 0; i<=neww_l-1; i++){
 			for(int z = 0; z<=neww[i]->len-1;z++){
 				//printf("%i | %f %f\n",neww[i]->len,neww[i]->pix[z*2],neww[i]->pix[z*2+1]);
@@ -1736,6 +1737,7 @@ int main(int argc,char*argv[]){
 		//free(bba->col);
 		//free(bba->pix);
 		//free(bba);
+		*/
 		}
 
 		glfw_load(w);

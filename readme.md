@@ -4,16 +4,21 @@ optimized build : `clang ./src/*.c -lm -lglfw -lGL -lGLEW -fno-trapping-math -ff
 
 build flags : -Dmemory_trace -Dstfu -D__debug -Dmemory_count
 
+once these todo tasks are done, i will most likely drop this project, drawing everything with triangles was a fun challenge but,
+it will simply make other things (ie, color, collisions, z-buffering) impossible or more difficult and resource demanding.
+
 # todo
 
-- fix the fps counter, its probably wrong 
+- z-buffer
 
-- color triangles (more detailed)
+- (not likely) moving parts 
 
-- animations 
+- (maybe) auto separate colliding polygons 
 
-- simple transparency
+- test transparency 
 
 # known issues
 
-- none atm:)
+- ordering is fucked (just for now hopefully)
+
+- [limitation] no colliding polygons (todo)
