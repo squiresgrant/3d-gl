@@ -7,6 +7,7 @@
 
 static const double FL_DIS = 1e-7;
 static const double DB_DIS = 1e-6;
+static const double CLOSE_ENOUGH = 1e-4;
 static const double NaN = 0.0f/0.0f;
 static const int forced_length = 20;
 

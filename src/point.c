@@ -982,10 +982,22 @@ glfl_ar** transp(glfl_ar** con,int lle){
 	return neww;
 }
 void sort_polygons(point_m* aaaa, glfl_ar** con){
+	//printf("---\n");
+	int col = 0;
 	for(int i = 0; i<=aaaa->len-2;i++){
 			//printf("a\n");
 			//double maxi = -INFINITY;
 			int su = -1;
+			
+			if(con[i]->max.z<con[i+1]->max.z&&con[i]->min.z<con[i+1]->min.z){
+				glfl_ar* tempp = con[i];	
+				con[i] = con[i+1];	
+				con[i+1] = tempp;
+				col=1;
+				i--;
+				continue;	
+			}
+			int scol = 0;
 			for(int p = 0; p<=con[i]->len-2; p++){
 				
 				//if(su!=-1)
@@ -996,7 +1008,7 @@ void sort_polygons(point_m* aaaa, glfl_ar** con){
 				//cord bb = poi_d(con[i]->pix[p*2],con[i]->pix[p*2+1],-mma,con[i]->pix[p*2+1],con[i+1]->len,con[i+1]->pix,0,-1);
 				//printf("%f\n",aa.z);
 				if(aa.z!=-1){
-					
+					scol = 1;
 					double l1x1 = con[i]->pix[p*2];
 					double l1y1 = con[i]->pix[p*2+1];
 					double l1z1 = con[i]->dep[p];
@@ -1020,15 +1032,17 @@ void sort_polygons(point_m* aaaa, glfl_ar** con){
 					//		,l1x1,l1y1,l1z1,l1x2,l1y2,l1z2,
 					//		l2x1,l2y1,l2z1,l2x2,l2y2,l2z2, aa.x, aa.y,lz1,lz2);
 					//printf("%f %f > %f %f\n",lz1,lz2,diff(lz1,lz2),FL_DIS);
-					if(lz1<lz2&&(diff(lz1,lz2)>DB_DIS)){
+					
+					if(lz1<lz2&&(diff(lz1,lz2)>CLOSE_ENOUGH)&&!isnan(lz1)&&!isnan(lz2)){
+						//printf("%f %f\n",lz1,lz2);
 						//printf("%f %f > %f %f\n",lz1,lz2,diff(lz1,lz2),FL_DIS);					
 						//printf("sw, %.2f,%.2f,%.2f -> %.2f,%.2f,%.2f\n",con[i]->col[0],con[i]->col[1],con[i]->col[2],
 						//		con[i+1]->col[0],con[i+1]->col[1],con[i+1]->col[2]);
 						glfl_ar* tempp = con[i];	
 						con[i] = con[i+1];	
 						con[i+1] = tempp;	
-
-						i=-1;
+						col = 1;
+						//i=-1;
 						break;
 					}
 					//su = aa.index+1;
@@ -1053,8 +1067,15 @@ void sort_polygons(point_m* aaaa, glfl_ar** con){
 						i=-1;
 						break;	
 					}*/
-				} 
+				}
 				
+				
+			}
+			if(!scol&&con[i]->min.z<con[i+1]->min.z){
+						//printf("%i\n",i);		
+						glfl_ar* tempp = con[i];	
+						con[i] = con[i+1];	
+						con[i+1] = tempp;
 			}
 
 			
@@ -1072,7 +1093,10 @@ void sort_polygons(point_m* aaaa, glfl_ar** con){
 				i=-1;
 			}
 			*/
+			
 		}
+	if(col)
+				sort_polygons(aaaa,con);
 }
 glfl_ar* perspective_proj(GLFWwindow* b,point_arr* c,double ctx,double cty,double ctz,double cx, double cy, double cz){ 
 
