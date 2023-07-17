@@ -35,6 +35,8 @@ double find_z(double x1, double y1, double z1, double x2, double y2, double z2, 
 }
 
 int point_on_line(double x,double y,double lx1,double ly1, double lx2,double ly2){
+	if(diff(x,lx1)<=DB_DIS&&diff(y,ly1)<=DB_DIS||diff(x,lx2)<=DB_DIS&&diff(y,ly2)<=DB_DIS)
+		return 1;
 	double crossproduct = (y-ly1)*(lx2-lx1) - (x-lx1)*(ly2-ly1);
 	if(fabs(crossproduct)>FL_DIS)
 		return 0;
@@ -981,8 +983,8 @@ glfl_ar** transp(glfl_ar** con,int lle){
 	}
 	return neww;
 }
-void sort_polygons(point_m* aaaa, glfl_ar** con){
-	//printf("---\n");
+void sort_polygons2(point_m* aaaa, glfl_ar** con){	
+	printf("e\n");
 	int col = 0;
 	for(int i = 0; i<=aaaa->len-2;i++){
 			//printf("a\n");
@@ -990,17 +992,18 @@ void sort_polygons(point_m* aaaa, glfl_ar** con){
 			int su = -1;
 			
 			if(con[i]->max.z<con[i+1]->max.z&&con[i]->min.z<con[i+1]->min.z){
+				//printf("%f %f, %f %f\n",con[i]->max.z,con[i]->min.z,con[i+1]->max.z,con[i+1]->min.z);
 				glfl_ar* tempp = con[i];	
 				con[i] = con[i+1];	
 				con[i+1] = tempp;
-				col=1;
-				i--;
+				//col=1;
+				i=-1;
 				continue;	
 			}
 			int scol = 0;
 			for(int p = 0; p<=con[i]->len-2; p++){
-				
-				//if(su!=-1)
+				//printf("%i\n",su);
+				if(su>con[i+1]->len)break;
 				//	printf("%i\n",su);
 				double mma = 77777;
 				cord aa = poi_d(con[i]->pix[p*2],con[i]->pix[p*2+1],con[i]->pix[(p+1)*2],con[i]->pix[(p+1)*2+1],con[i+1]->len,con[i+1]->pix,0,-1,su);
@@ -1024,8 +1027,13 @@ void sort_polygons(point_m* aaaa, glfl_ar** con){
 					double l2x2 = con[i+1]->pix[(aa.index+1)*2];
 					double l2y2 = con[i+1]->pix[(aa.index+1)*2+1];
 					double l2z2 = con[i+1]->dep[(aa.index+1)];
-					if(!point_on_line(aa.x,aa.y,l2x1,l2y1,l2x2,l2y2))
-						abort();
+					if(!point_on_line(aa.x,aa.y,l2x1,l2y1,l2x2,l2y2)){
+						//printf("%f %f %f %f %f %f\n",aa.x,aa.y,l2x1,l2y1,l2x2,l2y2);
+						//warn("no clue how this happened");
+						//break;
+						//warn("aborted sorting (collisions didn't collide)",pexit);
+						break;	
+					}
 					double lz1 = find_z(l1x1,l1y1,l1z1,l1x2,l1y2,l1z2,aa.x,aa.y);
 					double lz2 = find_z(l2x1,l2y1,l2z1,l2x2,l2y2,l2z2,aa.x,aa.y);
 					//printf("(%.2f,%.2f,%.2f)->(%.2f,%.2f,%.2f) & (%.2f,%.2f,%.2f)->(%.2f,%.2f,%.2f) cross at (%.2f,%f) w/ (%.2f,%.2f)\n"
@@ -1042,11 +1050,11 @@ void sort_polygons(point_m* aaaa, glfl_ar** con){
 						con[i] = con[i+1];	
 						con[i+1] = tempp;	
 						col = 1;
-						//i=-1;
+						i=-1;
 						break;
 					}
-					//su = aa.index+1;
-					//p--;
+					su = aa.index+1;
+					p--;
 					//maxi = greater(maxi,con[i]->dep[p]);
 					//double sl1 = (con[i]->dep[p+1] - con[i]->dep[p])/(con[i]->pix[(p+1)*2] - con[i]->pix[p*2]);
 					//double nz1  = con[i]->dep[p] + sl1 * (aa.x - con[i]->pix[(p*2)]) + sl1 * (aa.y - con[i]->pix[(p*2+1)]);
@@ -1071,7 +1079,7 @@ void sort_polygons(point_m* aaaa, glfl_ar** con){
 				
 				
 			}
-			if(!scol&&con[i]->min.z<con[i+1]->min.z){
+			if(0&&!scol&&con[i]->min.z<con[i+1]->min.z){
 						//printf("%i\n",i);		
 						glfl_ar* tempp = con[i];	
 						con[i] = con[i+1];	
@@ -1096,8 +1104,37 @@ void sort_polygons(point_m* aaaa, glfl_ar** con){
 			
 		}
 	if(col)
-				sort_polygons(aaaa,con);
+				sort_polygons2(aaaa,con);
 }
+void sort_polygons(point_m* aaaa, glfl_ar** con){
+	printf("---\n");
+	for(int i = 0; i<=aaaa->len-2;i++){
+		//for(int p = 0; p<=con[i]->len-2; p++){
+			if(con[i]->avg.z<con[i+1]->avg.z){
+				glfl_ar* tempp = con[i];	
+				con[i] = con[i+1];	
+				con[i+1] = tempp;
+				//col=1;
+				i--;
+				break;
+			}
+		//}
+	}
+	for(int i = 0; i<=aaaa->len-2;i++){
+		//for(int p = 0; p<=con[i]->len-2; p++){
+			if(con[i]->max.z<con[i+1]->max.z&&con[i]->min.z<con[i+1]->min.z){
+				glfl_ar* tempp = con[i];	
+				con[i] = con[i+1];	
+				con[i+1] = tempp;
+				//col=1;
+				i--;
+				break;
+			}
+		//}
+	}
+	sort_polygons2(aaaa,con);
+}
+
 glfl_ar* perspective_proj(GLFWwindow* b,point_arr* c,double ctx,double cty,double ctz,double cx, double cy, double cz){ 
 
 	GLfloat* pixels = malloc(sizeof(*pixels)*((1+c->len)*3));
@@ -1523,7 +1560,7 @@ int main(int argc,char*argv[]){
   logm("built shaders");
   
   
-	/*
+	///*
   double tl[3] = {5.0,200.0,200.0};
   double tr[3] = {200.0,200.0,200.0};
   double bl[3] = {5.0,5.0,200.0};
@@ -1555,7 +1592,7 @@ int main(int argc,char*argv[]){
 	
 	
 	//*/
-	///*
+	/*
 	
 	double xxx[5] = {0.0,100.0,100.0,0.0,0.0};
 	double yyy[5] = {0.0,0.0,100.0,100.0,0.0};
@@ -1664,7 +1701,10 @@ int main(int argc,char*argv[]){
 		for(int i = 0; i<=aaaa->len-1; i++)
 			printf("%f %f %f\n",con[i]->avg.z,con[i]->max.z,con[i]->min.z);
 		*/
-		
+		//printf("---\n");
+		//for(int i = 0; i<=aaaa->len-1; i++)
+		//	for(int p = 0; p<=con[i]->len-1; p++)
+		//		printf("%f %f\n",con[i]->pix[p*2],con[i]->pix[p*2+1]);
 		sort_polygons(aaaa,con);
 		//for(int i = 0; i!=aaaa->len-1; i++)
 			//for(int z = 0; z!=con[i]->len-1; z++)
@@ -1761,7 +1801,7 @@ int main(int argc,char*argv[]){
 		//free(bba->col);
 		//free(bba->pix);
 		//free(bba);
-		*/
+		//*/
 		}
 
 		glfw_load(w);
