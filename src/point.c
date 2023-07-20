@@ -991,14 +991,14 @@ void sort_polygons2(point_m* aaaa, glfl_ar** con){
 			//double maxi = -INFINITY;
 			int su = -1;
 			
-			if(con[i]->max.z<con[i+1]->max.z&&con[i]->min.z<con[i+1]->min.z){
+			if(0&&con[i]->max.z<con[i+1]->max.z&&con[i]->min.z<con[i+1]->min.z){
 				//printf("%f %f, %f %f\n",con[i]->max.z,con[i]->min.z,con[i+1]->max.z,con[i+1]->min.z);
 				glfl_ar* tempp = con[i];	
 				con[i] = con[i+1];	
 				con[i+1] = tempp;
 				//col=1;
-				i=-1;
-				continue;	
+				//i=-1;
+				//continue;	
 			}
 			int scol = 0;
 			for(int p = 0; p<=con[i]->len-2; p++){
@@ -1011,6 +1011,8 @@ void sort_polygons2(point_m* aaaa, glfl_ar** con){
 				//cord bb = poi_d(con[i]->pix[p*2],con[i]->pix[p*2+1],-mma,con[i]->pix[p*2+1],con[i+1]->len,con[i+1]->pix,0,-1);
 				//printf("%f\n",aa.z);
 				if(aa.z!=-1){
+					if(aa.index<su)
+						abort();
 					scol = 1;
 					double l1x1 = con[i]->pix[p*2];
 					double l1y1 = con[i]->pix[p*2+1];
@@ -1032,7 +1034,8 @@ void sort_polygons2(point_m* aaaa, glfl_ar** con){
 						//warn("no clue how this happened");
 						//break;
 						//warn("aborted sorting (collisions didn't collide)",pexit);
-						break;	
+						//break;	
+						continue;
 					}
 					double lz1 = find_z(l1x1,l1y1,l1z1,l1x2,l1y2,l1z2,aa.x,aa.y);
 					double lz2 = find_z(l2x1,l2y1,l2z1,l2x2,l2y2,l2z2,aa.x,aa.y);
@@ -1085,6 +1088,15 @@ void sort_polygons2(point_m* aaaa, glfl_ar** con){
 						con[i] = con[i+1];	
 						con[i+1] = tempp;
 			}
+			if(0&&i!=-1&&con[i]->max.z<con[i+1]->max.z&&con[i]->min.z<con[i+1]->min.z){
+				//printf("%f %f, %f %f\n",con[i]->max.z,con[i]->min.z,con[i+1]->max.z,con[i+1]->min.z);
+				glfl_ar* tempp = con[i];	
+				con[i] = con[i+1];	
+				con[i+1] = tempp;
+				//col=1;
+				i=-1;
+				continue;	
+			}
 
 			
 			//printf("%i %f\n",i,maxi);
@@ -1110,7 +1122,7 @@ void sort_polygons(point_m* aaaa, glfl_ar** con){
 	printf("---\n");
 	for(int i = 0; i<=aaaa->len-2;i++){
 		//for(int p = 0; p<=con[i]->len-2; p++){
-			if(con[i]->avg.z<con[i+1]->avg.z){
+			if(con[i]->max.z<con[i+1]->max.z){
 				glfl_ar* tempp = con[i];	
 				con[i] = con[i+1];	
 				con[i+1] = tempp;
@@ -1122,7 +1134,7 @@ void sort_polygons(point_m* aaaa, glfl_ar** con){
 	}
 	for(int i = 0; i<=aaaa->len-2;i++){
 		//for(int p = 0; p<=con[i]->len-2; p++){
-			if(con[i]->max.z<con[i+1]->max.z&&con[i]->min.z<con[i+1]->min.z){
+			if(con[i]->min.z<con[i+1]->min.z){
 				glfl_ar* tempp = con[i];	
 				con[i] = con[i+1];	
 				con[i+1] = tempp;
@@ -1132,9 +1144,137 @@ void sort_polygons(point_m* aaaa, glfl_ar** con){
 			}
 		//}
 	}
+	for(int i = 0; i<=aaaa->len-2;i++){
+		//for(int p = 0; p<=con[i]->len-2; p++){
+			if(con[i]->avg.z<con[i+1]->avg.z){
+				glfl_ar* tempp = con[i];	
+				con[i] = con[i+1];	
+				con[i+1] = tempp;
+				//col=1;
+				i--;
+				break;
+			}
+		//}
+	}
+	
 	sort_polygons2(aaaa,con);
 }
+int poly_cmp(glfl_ar* p1, glfl_ar* p2){
+	if(p1->max.z<p2->max.z&&p1->min.z<p2->min.z)
+		return 1;
+	else if(p1->max.z>p2->max.z&&p1->min.z>p2->min.z)
+		return 0;
+	for(int p = 0; p<=p1->len-2; p++){
+				//printf("%i\n",su);
+				//if(su>con[i+1]->len)break;
+				//	printf("%i\n",su);
+				double mma = 77777;
+				cord aa = poi_d(p1->pix[p*2],p1->pix[p*2+1],p1->pix[(p+1)*2],p1->pix[(p+1)*2+1],p2->len,p2->pix,0,-1,-1);
+				//cord cc = poi_d(con[i]->pix[p*2],con[i]->pix[p*2+1],mma,con[i]->pix[p*2+1],con[i+1]->len,con[i+1]->pix,0,-1);
+				//cord bb = poi_d(con[i]->pix[p*2],con[i]->pix[p*2+1],-mma,con[i]->pix[p*2+1],con[i+1]->len,con[i+1]->pix,0,-1);
+				//printf("%f\n",aa.z);
+				if(aa.z!=-1){
+					//if(aa.index<su)
+					//	abort();
+					//scol = 1;
+					double l1x1 = p1->pix[p*2];
+					double l1y1 = p1->pix[p*2+1];
+					double l1z1 = p1->dep[p];
 
+					double l1x2 = p1->pix[(p+1)*2];
+					double l1y2 = p1->pix[(p+1)*2+1];
+					double l1z2 = p1->dep[p+1];
+					
+					double l2x1 = p2->pix[(aa.index)*2];
+					double l2y1 = p2->pix[(aa.index)*2+1];
+					double l2z1 = p2->dep[(aa.index)];
+
+					double l2x2 = p2->pix[(aa.index+1)*2];
+					double l2y2 = p2->pix[(aa.index+1)*2+1];
+					double l2z2 = p2->dep[(aa.index+1)];
+					if(!point_on_line(aa.x,aa.y,l2x1,l2y1,l2x2,l2y2)){
+						//printf("%f %f %f %f %f %f\n",aa.x,aa.y,l2x1,l2y1,l2x2,l2y2);
+						//warn("no clue how this happened");
+						//break;
+						//warn("aborted sorting (collisions didn't collide)",pexit);
+						//break;	
+						continue;
+					}
+					double lz1 = find_z(l1x1,l1y1,l1z1,l1x2,l1y2,l1z2,aa.x,aa.y);
+					double lz2 = find_z(l2x1,l2y1,l2z1,l2x2,l2y2,l2z2,aa.x,aa.y);
+					//printf("(%.2f,%.2f,%.2f)->(%.2f,%.2f,%.2f) & (%.2f,%.2f,%.2f)->(%.2f,%.2f,%.2f) cross at (%.2f,%f) w/ (%.2f,%.2f)\n"
+					//		,l1x1,l1y1,l1z1,l1x2,l1y2,l1z2,
+					//		l2x1,l2y1,l2z1,l2x2,l2y2,l2z2, aa.x, aa.y,lz1,lz2);
+					//printf("%f %f > %f %f\n",lz1,lz2,diff(lz1,lz2),FL_DIS);
+					
+					if(lz1<lz2&&(diff(lz1,lz2)>CLOSE_ENOUGH)&&!isnan(lz1)&&!isnan(lz2)){
+						//printf("%f %f\n",lz1,lz2);
+						//printf("%f %f > %f %f\n",lz1,lz2,diff(lz1,lz2),FL_DIS);					
+						//printf("sw, %.2f,%.2f,%.2f -> %.2f,%.2f,%.2f\n",con[i]->col[0],con[i]->col[1],con[i]->col[2],
+						//		con[i+1]->col[0],con[i+1]->col[1],con[i+1]->col[2]);
+						return 1;
+					}
+					return 0;
+					
+				}
+				
+				
+			}
+	return -1;
+}
+int poly_app(glfl_ar** con,int len,glfl_ar* push){
+	con[len] = malloc(sizeof(*con[len]));
+	con[len] = push;
+	return len+1;
+}
+int poly_pre(glfl_ar** con,int len,glfl_ar* push){
+	con[len] = malloc(sizeof(*con[len]));
+	for(int i = len; i>0; i--){
+		con[i] = con[i-1];
+	}
+	con[0] = push;
+	return len+1;
+}
+int poly_ins(glfl_ar** con,int len,glfl_ar* push,int push_at){
+	if(push_at>len||push_at<0)
+		err("tried to insert at a invalid pos (dumbass)",pexit);
+	con[len] = malloc(sizeof(*con[len]));
+	for(int i = len; i>push_at; i--){
+		con[i] = con[i-1];
+	}
+	con[push_at] = push;
+	return len+1;
+}
+glfl_ar** sort_polygons3(point_m* aaaa, glfl_ar** con){
+	
+	glfl_ar** rea = malloc(sizeof(**rea)*aaaa->len);
+	int rea_len = 0;
+	rea_len = poly_app(rea,rea_len,con[0]);
+	for(int i = 1; i!=aaaa->len; i++){
+		for(int x = 0; x<=rea_len; x++){
+			if(x==rea_len){
+				rea_len=poly_app(rea,rea_len,con[i]);
+				break;
+			}
+			int test = poly_cmp(con[i],rea[x]);
+			if(test==1){
+				continue;
+			} else if(test==0){
+				rea_len=poly_ins(rea,rea_len,con[i],x);
+				break;	
+			}
+		}	
+	}/*
+	printf("---\n");
+	for(int i = 0;i!=rea_len; i++){
+		printf("%f %f vs %f %f\n",rea[i]->max.z,rea[i]->min.z,con[i]->max.z,con[i]->min.z);
+	}//*/
+	//glfl_ar** temp = con;
+	con = rea;
+	return rea;
+	//rea[0] = malloc(sizeof(*rea[0]));
+	//rea[0] = con[0];
+}
 glfl_ar* perspective_proj(GLFWwindow* b,point_arr* c,double ctx,double cty,double ctz,double cx, double cy, double cz){ 
 
 	GLfloat* pixels = malloc(sizeof(*pixels)*((1+c->len)*3));
@@ -1705,7 +1845,15 @@ int main(int argc,char*argv[]){
 		//for(int i = 0; i<=aaaa->len-1; i++)
 		//	for(int p = 0; p<=con[i]->len-1; p++)
 		//		printf("%f %f\n",con[i]->pix[p*2],con[i]->pix[p*2+1]);
-		sort_polygons(aaaa,con);
+		/*printf("---\n");
+		for(int i = 0; i!=aaaa->len; i++){
+			printf("%f %f\n",con[i]->max.z,con[i]->min.z);
+		}*/
+		con = sort_polygons3(aaaa,con);
+		/*printf("-\n");
+		for(int i = 0; i!=aaaa->len; i++){
+			printf("%f %f\n",con[i]->max.z,con[i]->min.z);
+		}*/
 		//for(int i = 0; i!=aaaa->len-1; i++)
 			//for(int z = 0; z!=con[i]->len-1; z++)
 			//printf("%f\n",con[i]->trans[z]);
@@ -1727,11 +1875,12 @@ int main(int argc,char*argv[]){
 	//int neww_l2 = neww2[0]->lin;
 		//printf("%i\n",neww_l);
 		//abort();
-		
+		//printf("r-\n");
 		glfl_ar* push = con[0];
 		for(int i = 1; i<=con_len-1;i++){	
-			//printf("%f %f\n",con[i]->max.x,con[i]->min.x);
+			//printf("%f %f\n",con[i]->max.z,con[i]->min.z);
 			join_glfl_a(push,con[i]);
+			//printf("	-%f %f\n",push->max.z,push->min.z);
 			free(con[i]->tri);
 			free(con[i]->tricol);
 			free(con[i]->pix);
@@ -1779,9 +1928,9 @@ int main(int argc,char*argv[]){
 				neww[tee]->col[z] = 0.5f;	
 			neww[tee]->tricol=ttee->tricol;
 			neww[tee]->tlen = ttee->tlen;	
-			//render_p(neww[tee],0);
+			render_p(neww[tee],0);
 			
-			//render_p(neww[tee],1);
+			render_p(neww[tee],1);
 			free(neww[tee]->tri);
 			free(neww[tee]->tricol);
 			free(ttee);

@@ -11,6 +11,8 @@ it will simply make other things (ie, color, collisions, z-buffering) impossible
 
 # todo
 
+- sort stuff into files better:3
+
 - z-buffer
 
 - (not likely) moving parts 
@@ -21,6 +23,6 @@ it will simply make other things (ie, color, collisions, z-buffering) impossible
 
 # known issues
 
-- ordering is now only slightly fucked (just for now hopefully)
+- ordering is now only barely fucked (WITH MEMORY LEAKS, for now)
 
 - [limitation] no colliding polygons (todo)
